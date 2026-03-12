@@ -1,2064 +1,1023 @@
-# Berit Shalvah Financial Services - Loan Management System
+# Berit Shalvah Financial Services — Loan Management System
 
-**Where Vision Meets Responsible Capital**
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Odoo](https://img.shields.io/badge/Odoo-19.0-purple)
+![Django](https://img.shields.io/badge/Django-5.0-green)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
+![Redis](https://img.shields.io/badge/Redis-7-red)
+![License](https://img.shields.io/badge/License-LGPL--3-orange)
 
-A comprehensive loan management system built with Odoo 19 Community (backend) and Django 5 (client portal) for Berit Shalvah Financial Services Ltd, a Kenyan-owned Non-Deposit Taking Credit Provider.
+A full-stack loan management platform for **Berit Shalvah Financial Services Ltd** (Kenya).  
+The system combines an **Odoo 19 back-office** (loan origination, approvals, repayments, reporting) with a **Django client portal** (self-service applications, document uploads, repayment tracking), all wired together through a REST/XML-RPC integration layer and served behind an **Nginx** reverse proxy.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Quick Start](#quick-start)
-- [Using the Start Script](#using-the-start-script)
-- [Installation & Setup](#installation--setup)
-- [Configuration](#configuration)
-- [Running the System](#running-the-system)
-- [Odoo ↔ Django Synchronization](#odoo--django-synchronization)
-- [Loan Application UI](#loan-application-ui)
-- [Admin Interface](#admin-interface)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
-- [Monitoring & Maintenance](#monitoring--maintenance)
-- [Support](#support)
+1. [Architecture Overview](#architecture-overview)
+2. [Technology Stack](#technology-stack)
+3. [Repository Structure](#repository-structure)
+4. [Odoo Module — `berit_loan`](#odoo-module--berit_loan)
+   - [Models](#models)
+   - [Business Rules](#business-rules)
+   - [Scheduled Jobs (Crons)](#scheduled-jobs-crons)
+   - [Security & Roles](#security--roles)
+   - [Reports](#reports)
+5. [Django Client Portal](#django-client-portal)
+   - [Apps](#apps)
+   - [Odoo Sync Layer](#odoo-sync-layer)
+   - [Celery Tasks](#celery-tasks)
+6. [Nginx Reverse Proxy](#nginx-reverse-proxy)
+7. [Prerequisites](#prerequisites)
+8. [Local Development Setup (Bare Metal)](#local-development-setup-bare-metal)
+9. [Docker Setup](#docker-setup)
+10. [Environment Variables](#environment-variables)
+11. [Database Setup](#database-setup)
+12. [Running the System](#running-the-system)
+13. [Deployment (Production)](#deployment-production)
+14. [API Integration Reference](#api-integration-reference)
+15. [Loan Business Rules Reference](#loan-business-rules-reference)
+16. [Troubleshooting](#troubleshooting)
+17. [Contributing](#contributing)
+18. [License](#license)
 
 ---
 
-## Overview
-
-This system integrates two powerful platforms to create a seamless loan management solution:
-
-- **Odoo 19 Community** - Internal loan management backend (staff/admin use only)
-- **Django Client Portal** - Branded web application for clients to apply and track loans
-
-### Key Features
-
-✅ **Bidirectional Synchronization** - Real-time data sync between Django and Odoo  
-✅ **Automatic Retry Logic** - 5 attempts with exponential backoff for reliability  
-✅ **Conflict Detection** - Intelligent detection and resolution of data conflicts  
-✅ **Distributed Locks** - Prevents race conditions and duplicate operations  
-✅ **Complete Audit Trail** - Full tracking of all sync operations  
-✅ **Webhook Integration** - Real-time updates from Odoo to Django  
-✅ **Modern UI** - Beautiful, responsive client portal with Alpine.js  
-✅ **Multi-Step Wizard** - 5-step loan application process with validation  
-✅ **Admin Dashboard** - Complete monitoring and management interface  
-✅ **Document Management** - Secure upload and storage of loan documents  
-✅ **Collateral Tracking** - Track collateral information and valuations  
-✅ **Repayment Scheduling** - Automatic repayment schedule generation  
-
----
-
-## Architecture
-
-### System Components
-
-The system consists of three main layers:
+## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Client Portal (Django)                    │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ Loan Application Wizard | Dashboard | Admin Panel   │    │
-│  │ (Alpine.js + Tailwind CSS)                          │    │
-│  └─────────────────────────────────────────────────────┘    │
-├─────────────────────────────────────────────────────────────┤
-│            Sync Engine (PerfectOdooSync)                    │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ Retry Logic | Locks | Conflict Resolution           │    │
-│  │ Webhooks | Audit Trail | Error Handling             │    │
-│  └─────────────────────────────────────────────────────┘    │
-├─────────────────────────────────────────────────────────────┤
-│                   Odoo Backend (ERP)                         │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ Loan Management | Repayment Tracking | Documents    │    │
-│  │ Collateral Management | Financial Reports            │    │
-│  └─────────────────────────────────────────────────────┘    │
-├─────────────────────────────────────────────────────────────┤
-│              Infrastructure & Services                       │
-│  ┌──────────────┬──────────────┬──────────────┐             │
-│  │  PostgreSQL  │    Redis     │   Celery     │             │
-│  │     16       │      7       │    Tasks     │             │
-│  └──────────────┴──────────────┴──────────────┘             │
-└─────────────────────────────────────────────────────────────┘
+                        ┌─────────────────────────────────────────┐
+                        │              NGINX  :80 / :443           │
+                        │  /web, /odoo  →  Odoo     :8069          │
+                        │  /websocket   →  Odoo gevent  :8072      │
+                        │  /longpolling →  Odoo gevent  :8072      │
+                        │  /portal, /admin, /api  →  Django :8000  │
+                        └────────────┬──────────────┬─────────────┘
+                                     │              │
+              ┌──────────────────────┘              └──────────────────────┐
+              ▼                                                             ▼
+   ┌──────────────────────┐                               ┌────────────────────────┐
+   │    Odoo 19 Backend   │                               │   Django 5 Portal      │
+   │    Port 8069 / 8072  │◄──── XML-RPC / REST ─────────│   Port 8000            │
+   │                      │                               │                        │
+   │  berit_loan module   │                               │  apps/accounts         │
+   │  - Loan Applications │                               │  apps/loans            │
+   │  - Repayment Sched.  │                               │  apps/documents        │
+   │  - Collateral        │                               │  apps/dashboard        │
+   │  - Guarantors        │                               │                        │
+   │  - Documents         │                               │  Celery Worker         │
+   │  - Interest Configs  │                               │  Celery Beat           │
+   └──────────┬───────────┘                               └──────────┬─────────────┘
+              │                                                       │
+              └──────────────────────┬────────────────────────────────┘
+                                     ▼
+                        ┌────────────────────────┐
+                        │   PostgreSQL  :5432     │
+                        │   DB: berit_odoo        │
+                        │   DB: berit_portal      │
+                        └────────────┬────────────┘
+                                     │
+                        ┌────────────▼────────────┐
+                        │   Redis  :6379           │
+                        │   Celery broker/backend  │
+                        └─────────────────────────┘
 ```
-
-### Data Flow
-
-#### Django → Odoo (Push Sync)
-1. User submits loan application in Django portal
-2. LoanApplication record created in Django
-3. SyncEvent created with status "pending"
-4. Celery task queued for async sync
-5. PerfectOdooSync connects to Odoo via XML-RPC
-6. Loan data pushed to Odoo with retry logic
-7. Distributed lock prevents concurrent operations
-8. SyncEvent status updated to "completed"
-9. odoo_record_id stored in LoanApplication
-10. Webhook notifies of completion
-
-#### Odoo → Django (Pull Sync)
-1. Loan updated in Odoo (status, repayment, etc.)
-2. Odoo triggers webhook to Django
-3. Django webhook endpoint receives payload
-4. SyncEvent created for tracking
-5. Odoo data pulled back to Django
-6. LoanApplication status updated
-7. SyncEvent marked as completed
-8. Dashboard reflects changes in real-time
-
-#### Real-time Webhook
-1. Odoo sends webhook to registered endpoint
-2. Signature verified for security
-3. Data transformed and validated
-4. Database updated atomically
-5. Celery task queued for any follow-up actions
-6. Response sent immediately (webhook timeout safe)
 
 ---
 
 ## Technology Stack
 
-| Component | Technology / Version | Purpose |
-|-----------|---------------------|---------|
-| ERP Backend | Odoo 19 Community Edition | Loan management backend |
-| Client Portal | Django 5.x (Python 3.12+) | Client-facing web app |
-| Database | PostgreSQL 16 | Data persistence |
-| Cache / Queue | Redis 7 + Celery | Background tasks |
-| Task Scheduler | Celery Beat | Scheduled sync operations |
-| Reverse Proxy | Nginx | Load balancing, SSL |
-| Containerization | Docker + Docker Compose | Development & deployment |
-| Frontend (Django) | Django Templates + TailwindCSS + Alpine.js | Responsive UI |
-| PDF Generation | WeasyPrint | Document generation |
-| Sync Engine | Python (XML-RPC) | Odoo ↔ Django sync |
+| Layer | Technology | Version |
+|---|---|---|
+| ERP / Back-office | Odoo | 19.0 |
+| Client Portal | Django | 5.0 |
+| Task Queue | Celery + django-celery-beat | 5.3+ |
+| Database (Odoo) | PostgreSQL | 16 |
+| Database (Portal) | PostgreSQL | 16 |
+| Cache / Broker | Redis | 7 |
+| Reverse Proxy | Nginx | alpine |
+| Container Runtime | Docker + Docker Compose | v3.8 |
+| PDF Generation | WeasyPrint | 60+ |
+| Real-time | Odoo gevent WebSocket | port 8072 |
 
 ---
 
-## Project Structure
+## Repository Structure
 
 ```
 berit-shalvah/
-├── README.md                           # This file
-├── .env.example                        # Environment template
-├── .env                                # Environment variables (not in repo)
-├── docker-compose.yml                  # Development containers
-├── docker-compose.prod.yml             # Production containers
 │
-├── django_portal/                      # Django application
-│   ├── manage.py                       # Django CLI
-│   ├── requirements.txt                # Python dependencies
-│   ├── Dockerfile                      # Django container
-│   │
-│   ├── config/                         # Django settings
-│   │   ├── __init__.py
-│   │   ├── settings/
-│   │   │   ├── base.py                # Main settings
-│   │   │   ├── development.py         # Dev settings
-│   │   │   └── production.py          # Prod settings
-│   │   ├── urls.py                    # URL routing
-│   │   └── wsgi.py                    # WSGI application
-│   │
-│   ├── apps/                          # Django applications
-│   │   ├── accounts/                  # User authentication
-│   │   ├── loans/                     # Loan management
-│   │   │   ├── models.py              # LoanApplication model
-│   │   │   ├── views.py               # Loan views
-│   │   │   ├── forms.py               # Loan forms
-│   │   │   └── sync/                  # Sync engine (NEW)
-│   │   │       ├── migrations/        # Database migrations
-│   │   │       │   ├── __init__.py
-│   │   │       │   └── 0001_initial.py
-│   │   │       ├── __init__.py
-│   │   │       ├── apps.py
-│   │   │       ├── webhook_models.py  # SyncEvent, SyncConflict, etc.
-│   │   │       ├── perfect_sync.py    # Main sync engine
-│   │   │       ├── sync_tasks.py      # Celery tasks
-│   │   │       ├── webhook_views.py   # Webhook endpoints
-│   │   │       └── admin.py           # Admin configuration
-│   │   ├── documents/                 # Document management
-│   │   ├── dashboard/                 # Client dashboard
-│   │   └── apps.py                    # App registry
-│   │
-│   ├── templates/berit/               # HTML templates
-│   │   ├── base.html                  # Base template
-│   │   ├── dashboard/
-│   │   │   └── client_dashboard.html  # Enhanced dashboard
-│   │   ├── loans/
-│   │   │   └── modern_wizard.html     # 5-step wizard
-│   │   └── ...
-│   │
-│   ├── static/                        # CSS, JavaScript
-│   ├── staticfiles/                   # Collected static files
-│   ├── media/                         # User uploads
-│   ├── logs/                          # Application logs
-│   │   ├── django.log
-│   │   ├── celery_worker.log
-│   │   └── celery_beat.log
-│   └── ...
-│
-├── odoo/                              # Odoo backend
-│   ├── Dockerfile                     # Odoo container
-│   ├── odoo.conf                      # Odoo configuration
-│   ├── requirements.txt               # Python dependencies
+├── odoo/                          # Odoo installation configuration
+│   ├── odoo.conf                  # Odoo server config (workers, ports, DB)
+│   ├── Dockerfile                 # Odoo container image
 │   └── addons/
-│       └── berit_loan/                # Custom loan module
+│       └── berit_loan/            # Custom Odoo module
 │           ├── __manifest__.py
 │           ├── models/
+│           │   ├── loan_application.py
+│           │   ├── repayment_schedule.py
+│           │   ├── collateral.py
+│           │   ├── guarantor.py
+│           │   ├── loan_document.py
+│           │   └── interest_rate_config.py
 │           ├── views/
-│           └── ...
+│           ├── reports/
+│           ├── security/
+│           ├── data/
+│           │   ├── ir_cron.xml
+│           │   ├── interest_rates.xml
+│           │   └── loan_sequence.xml
+│           ├── wizards/
+│           └── demo/
 │
-├── nginx/                             # Reverse proxy configuration
-│   ├── nginx.conf                     # Nginx config
-│   └── ssl/                           # SSL certificates
+├── django_portal/                 # Django client portal
+│   ├── config/                    # Django project settings
+│   │   ├── settings/
+│   │   │   ├── base.py
+│   │   │   ├── development.py
+│   │   │   └── production.py
+│   │   ├── celery.py
+│   │   └── urls.py
+│   ├── apps/
+│   │   ├── accounts/              # Custom user model, auth, KYC
+│   │   ├── loans/                 # Loan applications + Odoo sync
+│   │   │   ├── models.py
+│   │   │   ├── odoo_sync.py       # XML-RPC bridge to Odoo
+│   │   │   ├── tasks.py           # Celery async tasks
+│   │   │   └── sync/              # Enhanced bidirectional sync
+│   │   ├── documents/             # Document upload & verification
+│   │   └── dashboard/             # Client dashboard views
+│   ├── templates/                 # Jinja2 / Django templates
+│   ├── static/                    # CSS, JS, images
+│   ├── Dockerfile
+│   ├── Dockerfile.celery
+│   ├── Dockerfile.celerybeat
+│   └── requirements.txt
 │
-└── scripts/                           # Utility scripts
-    ├── setup.sh                       # Initial setup
-    ├── deploy.sh                      # Deployment
-    ├── backup.sh                      # Database backup
-    └── verify_migrations.sh           # Verify migrations
+├── nginx/
+│   ├── nginx.conf                 # Bare-metal config (localhost upstreams)
+│   └── nginx.docker.conf          # Docker config (service-name upstreams)
+│
+├── scripts/
+│   ├── setup.sh                   # First-time Docker setup
+│   ├── setup_local.sh             # First-time bare-metal setup
+│   ├── backup.sh                  # Database backup script
+│   └── deploy.sh                  # Production deploy script
+│
+├── docker-compose.yml             # Development Docker Compose
+├── docker-compose.prod.yml        # Production Docker Compose
+├── start_system.sh                # Simple bare-metal start script
+├── start_system_improved.sh       # Full bare-metal start with health checks
+├── .env.example                   # Environment variable template
+└── README.md
 ```
 
 ---
 
-## Quick Start
+## Odoo Module — `berit_loan`
 
-### Prerequisites
+The `berit_loan` Odoo module is the authoritative source of truth for all loan data.
 
-- Docker and Docker Compose
-- Git
-- 4GB+ RAM
-- 10GB+ disk space
+### Models
 
-### 5-Minute Setup
+#### `berit.loan.application`
+The core model representing a loan application through its full lifecycle.
 
-```bash
-# 1. Clone the repository
-git clone <repository-url>
-cd berit-shalvah
+| Field | Type | Description |
+|---|---|---|
+| `name` | Char | Auto-generated reference (e.g. `BSL-00001`) |
+| `applicant_id` | Many2one → `res.partner` | Loan applicant |
+| `loan_amount` | Float | Requested amount in KES |
+| `loan_duration` | Integer | Duration in months |
+| `interest_rate` | Float (computed) | Monthly rate derived from amount tier |
+| `monthly_repayment` | Float (computed) | Principal + interest per month |
+| `total_repayable` | Float (computed) | Full repayment amount |
+| `legal_fee` | Float (computed) | 2.5% of loan amount |
+| `state` | Selection | `draft → submitted → under_review → approved → active → closed / defaulted / rejected` |
+| `collateral_ids` | One2many | Linked collateral records |
+| `guarantor_ids` | One2many | Linked guarantors |
+| `repayment_ids` | One2many | Repayment schedule lines |
+| `document_ids` | One2many | Supporting documents |
+| `crb_clearance` | Boolean | CRB clearance status |
+| `kyc_verified` | Boolean | KYC verification status |
+| `django_application_id` | Char | Foreign key back to Django portal UUID |
 
-# 2. Copy environment file
-cp .env.example .env
-# Edit .env with your configuration
-
-# 3. Start all services
-docker-compose up -d
-
-# 4. Initialize Odoo database
-docker-compose exec odoo odoo --addons-path=/opt/odoo/addons,/mnt/extra-addons \
-  -d berit_odoo -i berit_loan --stop-after-init
-
-# 5. Access the applications
-# Odoo Admin: http://localhost:8069
-# Django Portal: http://localhost:8000
-# Nginx: http://localhost
+**State transitions:**
+```
+draft ──► submitted ──► under_review ──► approved ──► active ──► closed
+                                    └──► rejected         └──► defaulted
 ```
 
 ---
 
-## Using the Start Script
+#### `berit.repayment.schedule`
+One record per installment. Generated automatically when a loan is approved.
 
-### Automated System Startup
+| Field | Type | Description |
+|---|---|---|
+| `loan_id` | Many2one | Parent loan |
+| `due_date` | Date | Installment due date |
+| `principal_amount` | Float | Principal portion |
+| `interest_amount` | Float | Interest portion |
+| `total_due` | Float (computed) | Principal + interest |
+| `amount_paid` | Float | Amount actually paid |
+| `status` | Selection | `pending / paid / overdue / partially_paid` |
+| `days_overdue` | Integer (computed) | Days past due date |
+| `penalty_amount` | Float (computed) | 1% of total due per day overdue |
+| `payment_method` | Selection | `cash / bank_transfer / mpesa / cheque / other` |
 
-The easiest way to start the entire system is using the provided `start_system.sh` script:
+---
 
+#### `berit.collateral`
+Assets pledged as security against a loan.
+
+| Field | Type | Description |
+|---|---|---|
+| `loan_id` | Many2one | Parent loan |
+| `collateral_type` | Selection | `land / vehicle / building / equipment / other` |
+| `description` | Text | Detailed description |
+| `estimated_value` | Float | Market value in KES |
+| `verified` | Boolean | Officer verification flag |
+
+**Rule:** Total collateral value must be at least **1.5× the loan amount**.
+
+---
+
+#### `berit.guarantor`
+Individuals who guarantee a loan applicant.
+
+| Field | Type | Description |
+|---|---|---|
+| `loan_id` | Many2one | Parent loan |
+| `partner_id` | Many2one → `res.partner` | Guarantor contact |
+| `relationship` | Char | Relationship to applicant |
+| `id_number` | Char | National ID number |
+| `phone` | Char | Contact phone |
+| `employment_status` | Selection | `employed / self_employed / business_owner` |
+| `monthly_income` | Float | KES per month |
+| `verified` | Boolean | Officer verification flag |
+
+---
+
+#### `berit.loan.document`
+KYC, financial, and legal documents attached to a loan.
+
+| Field | Type | Description |
+|---|---|---|
+| `loan_id` | Many2one | Parent loan |
+| `document_type` | Selection | `id / kra_pin / crb / payslip / bank_statement / mpesa_statement / guarantor_letter / collateral_proof / valuation_report / other` |
+| `file` | Binary | Document file |
+| `filename` | Char | Original filename |
+| `verified` | Boolean | Officer verification flag |
+| `expiry_date` | Date | Document expiry (for IDs, CRBs) |
+| `is_expired` | Boolean (computed) | Auto-flag based on expiry_date |
+
+---
+
+#### `berit.interest.rate.config`
+Configurable interest rate tiers (editable by admin without code changes).
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | Char | Tier label |
+| `min_amount` | Float | Lower bound (KES) |
+| `max_amount` | Float | Upper bound (KES, 0 = unlimited) |
+| `monthly_rate` | Float | Monthly interest rate (%) |
+| `active` | Boolean | Whether tier is active |
+
+---
+
+### Business Rules
+
+#### Interest Rate Tiers (Monthly)
+
+| Loan Amount (KES) | Monthly Rate |
+|---|---|
+| 1 – 99,999 | 20.0% |
+| 100,000 – 399,999 | 17.5% |
+| 400,000 – 599,999 | 15.0% |
+| 600,000 – 799,999 | 10.0% |
+| 800,000 – 999,999 | 7.5% |
+| 1,000,000+ | 5.0% |
+
+#### Fees
+- **Legal fee:** 2.5% of loan amount (one-time, client-paid at disbursement)
+- **Penalty:** 1% of total installment due per day overdue
+
+#### Collateral
+- Minimum required value: **1.5× loan amount**
+- Collateral must be verified by a loan officer before approval
+
+#### Loan Duration Limits
+- **First-time borrowers:** 1–3 months
+- **Returning borrowers:** 1–12 months
+
+---
+
+### Scheduled Jobs (Crons)
+
+| Job | Model | Method | Schedule | Description |
+|---|---|---|---|---|
+| Mark Overdue Repayments | `berit.repayment.schedule` | `mark_overdue_payments()` | Daily | Marks pending installments past due date as `overdue`; triggers loan default after 30 days |
+| Check Document Expiry | `berit.loan.document` | `check_all_documents_expiry()` | Daily | Flags documents whose `expiry_date` has passed |
+| Send Repayment Reminders | `berit.repayment.schedule` | `send_due_soon_reminders()` | Daily | Sends email reminders for installments due within 7 days |
+| Weekly Portfolio Summary | `berit.loan.application` | `send_portfolio_summary()` | Weekly | Portfolio summary email (disabled until implemented) |
+
+> **Note:** Cron `code` fields must only contain a single `model.method()` call.
+> All logic (imports, queries) lives in the Python model method — not in the XML.
+
+---
+
+### Security & Roles
+
+Defined in `security/security.xml` and `security/ir.model.access.csv`.
+
+| Role | Permissions |
+|---|---|
+| `berit_loan.group_loan_officer` | Read/write loan applications, repayments, documents |
+| `berit_loan.group_loan_manager` | Full CRUD + approval/rejection + config |
+| `berit_loan.group_loan_admin` | Full access including interest rate config |
+
+---
+
+### Reports
+
+| Report | Template | Description |
+|---|---|---|
+| Loan Agreement | `reports/loan_agreement_report.xml` | Formal loan agreement PDF with all terms, collateral, guarantor details |
+
+---
+
+## Django Client Portal
+
+The Django portal is the **client-facing** interface. Clients register, submit loan applications, upload documents, and track repayment schedules. All data is bidirectionally synced to Odoo via XML-RPC.
+
+### Apps
+
+#### `apps/accounts`
+Custom user model extending `AbstractBaseUser`.
+
+- **User types:** `client`, `admin`, `staff`
+- Registration with email verification
+- KYC document upload at onboarding
+- Profile management
+- Django Allauth integration for social auth
+
+Key models:
+- `CustomUser` — email-based auth with `user_type`, `phone`, `id_number`, `odoo_partner_id`
+- `UserDocument` — KYC documents per user (ID copy, KRA PIN, passport photo, etc.)
+
+---
+
+#### `apps/loans`
+Loan application lifecycle from the client's perspective.
+
+Key models:
+- `LoanApplication` — mirrors Odoo's `berit.loan.application`, linked via `odoo_loan_id`
+- `LoanDocument` — documents attached to a specific loan application
+- `RepaymentSchedule` — synced copy of Odoo's repayment schedule for display
+
+Key views:
+- `LoanApplicationWizard` — multi-step application form (amount → purpose → employment → documents → review)
+- `LoanListView` — client's loan history with status badges
+- `LoanDetailView` — full loan detail with repayment schedule and document list
+
+Key management commands:
 ```bash
-cd /home/nick/berit-shalvah && chmod +x start_system.sh && ./start_system.sh
-```
+# Sync all loans from Odoo to Django
+python manage.py sync_loans
 
-This script automatically:
+# Push a specific Django application to Odoo
+python manage.py push_to_odoo --loan-id <uuid>
 
-1. **Checks system services:**
-   - PostgreSQL database
-   - Redis cache server
-   - Nginx reverse proxy
+# Test Odoo connectivity
+python manage.py test_odoo
 
-2. **Starts application services:**
-   - Odoo backend (port 8069)
-   - Django portal (port 8000)
-   - Celery worker (async tasks)
-   - Celery Beat scheduler (periodic tasks)
-
-3. **Displays status:**
-   - Shows PID of each running process
-   - Displays access URLs
-   - Provides service status overview
-
-### What the Script Does
-
-```bash
-✓ Activates Python virtual environments
-✓ Starts all system services in order
-✓ Checks service status
-✓ Displays access URLs
-✓ Keeps processes running until Ctrl+C
-```
-
-### Accessing Services After Startup
-
-Once the script is running, access:
-
-- **Odoo Admin**: http://localhost:8069/web/login
-- **Django Portal**: http://localhost:8000
-- **Django Admin**: http://localhost:8000/admin
-- **Nginx Proxy**: http://localhost
-
-### Stopping All Services
-
-Press `Ctrl+C` in the terminal where the script is running. This will:
-
-```bash
-🛑 Stopping all services...
-✓ All services stopped
-```
-
-All processes will be terminated gracefully.
-
-### Troubleshooting the Start Script
-
-#### Issue: "Permission denied" error
-```bash
-# Make script executable
-chmod +x start_system.sh
-
-# Then run it
-./start_system.sh
-```
-
-#### Issue: "No such file or directory" - virtual environment
-```bash
-# Ensure virtual environments exist
-python3.12 -m venv django_env
-python3.12 -m venv odoo_env
-
-# Install dependencies
-source django_env/bin/activate
-cd django_portal && pip install -r requirements.txt
-```
-
-#### Issue: "Connection refused" errors
-```bash
-# Verify system services are running
-sudo systemctl status postgresql
-sudo systemctl status redis
-sudo systemctl status nginx
-
-# Start them if needed
-sudo systemctl start postgresql
-sudo systemctl start redis
-sudo systemctl start nginx
-```
-
-#### Issue: Port already in use
-```bash
-# Find process using port 8000
-lsof -i :8000
-
-# Find process using port 8069
-lsof -i :8069
-
-# Kill the process
-kill -9 <PID>
-
-# Or edit the script to use different ports
-```
-
-#### Issue: Virtual environment not found
-```bash
-# Create virtual environments if they don't exist
-python3.12 -m venv /home/nick/berit-shalvah/django_env
-python3.12 -m venv /home/nick/berit-shalvah/odoo_env
-
-# Install dependencies
-source /home/nick/berit-shalvah/django_env/bin/activate
-cd /home/nick/berit-shalvah/django_portal
-pip install -r requirements.txt
-```
-
-#### Issue: "ModuleNotFoundError" when starting services
-```bash
-# Ensure all dependencies are installed
-source /home/nick/berit-shalvah/django_env/bin/activate
-cd /home/nick/berit-shalvah/django_portal
-pip install -r requirements.txt
-
-# Verify Django can run
-python manage.py check
-
-# If still failing, upgrade pip
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-#### Issue: PostgreSQL permission denied
-```bash
-# The script uses sudo for system services
-# Ensure your user is in the sudoers group
-sudo usermod -aG sudo $USER
-
-# Or run the script with sudo
-sudo ./start_system.sh
-```
-
-#### Issue: Celery tasks not processing
-```bash
-# Verify Redis is running
-redis-cli ping
-# Should respond: PONG
-
-# Check Celery worker logs
-tail -f /home/nick/berit-shalvah/logs/celery_worker.log
-
-# Inspect Celery tasks
-celery -A config inspect active
-
-# Restart Celery worker manually
-pkill -f "celery -A config worker"
-cd /home/nick/berit-shalvah/django_portal
-source ../django_env/bin/activate
-celery -A config worker -l info
-```
-
-### Startup Script Quick Fixes
-
-| Problem | Quick Fix |
-|---------|-----------|
-| Permission denied | `chmod +x start_system.sh` |
-| Port in use | `lsof -i :<port> && kill -9 <PID>` |
-| PostgreSQL not running | `sudo systemctl start postgresql` |
-| Redis not running | `sudo systemctl start redis` |
-| Virtual env missing | `python3.12 -m venv django_env` |
-| Import errors | `pip install -r requirements.txt` |
-| Celery not working | `redis-cli ping` then restart worker |
-| Migrations failing | `python manage.py migrate --run-syncdb` |
-
-
-### Manual Service Management
-
-If you prefer to run services in separate terminals:
-
-**Terminal 1: Django Portal**
-```bash
-cd /home/nick/berit-shalvah/django_portal
-source ../django_env/bin/activate
-python manage.py runserver 0.0.0.0:8000
-```
-
-**Terminal 2: Celery Worker**
-```bash
-cd /home/nick/berit-shalvah/django_portal
-source ../django_env/bin/activate
-celery -A config worker -l info
-```
-
-**Terminal 3: Celery Beat Scheduler**
-```bash
-cd /home/nick/berit-shalvah/django_portal
-source ../django_env/bin/activate
-celery -A config beat -l info
-```
-
-**Terminal 4: Odoo Backend**
-```bash
-cd /home/nick/berit-shalvah
-source odoo_env/bin/activate
-python /home/nick/odoo-19/odoo-bin --config=/home/nick/berit-shalvah/odoo/odoo.conf --db-filter=^berit_odoo$
-```
-
-### Creating Additional Startup Scripts
-
-You can create variations of the startup script for different purposes:
-
-**Development Mode (with debug output):**
-```bash
-#!/bin/bash
-# start_system_debug.sh
-cd /home/nick/berit-shalvah
-source django_env/bin/activate
-cd django_portal
-export DEBUG=True
-export DJANGO_SETTINGS_MODULE=config.settings.development
-python manage.py runserver 0.0.0.0:8000
-```
-
-**Production Mode:**
-```bash
-#!/bin/bash
-# start_system_prod.sh
-cd /home/nick/berit-shalvah
-source django_env/bin/activate
-cd django_portal
-export DEBUG=False
-gunicorn --bind 0.0.0.0:8000 --workers 4 config.wsgi:application
-```
-
-**Systemd Service (for automatic startup):**
-```ini
-# /etc/systemd/system/berit-shalvah.service
-[Unit]
-Description=Berit Shalvah Financial Services
-After=network.target postgresql.service redis.service
-
-[Service]
-Type=simple
-User=nick
-WorkingDirectory=/home/nick/berit-shalvah
-ExecStart=/bin/bash -c 'cd /home/nick/berit-shalvah && ./start_system.sh'
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Then enable and start it:
-```bash
-sudo systemctl enable berit-shalvah
-sudo systemctl start berit-shalvah
-```
-
-### Improved Startup Script (Advanced)
-
-For enhanced features like debug mode, logging, and better error handling, use the improved script:
-
-```bash
-cd /home/nick/berit-shalvah && chmod +x start_system_improved.sh && ./start_system_improved.sh
-```
-
-**Features of the improved script:**
-- ✅ Comprehensive logging to `logs/startup_*.log`
-- ✅ Debug mode with verbose output: `./start_system_improved.sh --debug`
-- ✅ Selective service startup: `./start_system_improved.sh --no-odoo --no-celery`
-- ✅ Automatic virtual environment creation and dependency checks
-- ✅ Better error handling and recovery
-- ✅ Real-time process monitoring
-- ✅ Graceful shutdown with Ctrl+C
-- ✅ Detailed service status reporting
-
-**Usage examples:**
-
-```bash
-# Start with debug output
-./start_system_improved.sh --debug
-
-# Start only Django (skip Odoo and Celery)
-./start_system_improved.sh --no-odoo --no-celery
-
-# Start without Odoo
-./start_system_improved.sh --no-odoo
-
-# View help
-./start_system_improved.sh --help
-
-# View detailed logs
-tail -f logs/startup_*.log
-```
-
-**Available options:**
-```
-  --debug       Enable debug mode with verbose output
-  --verbose     Show verbose output
-  --no-odoo     Skip Odoo startup (only Django + Celery)
-  --no-celery   Skip Celery worker and beat (only Django + Odoo)
-  --help        Show help message
+# Fix partner name mismatches
+python manage.py fix_odoo_partner_names
 ```
 
 ---
 
-## Installation & Setup
+#### `apps/documents`
+Centralised document management.
 
-### Local Development (Without Docker)
+- Upload with file-type validation (PDF, JPG, PNG, max 10MB)
+- Document status tracking: `pending / verified / rejected / expired`
+- Admin verification workflow
+- Auto-expiry detection
 
-#### Prerequisites
+---
 
-- Python 3.12+
-- PostgreSQL 16+
-- Redis 7+
-- Node.js 18+
+#### `apps/dashboard`
+Client dashboard landing page.
 
-#### Step 1: Install System Dependencies
+- Loan summary cards (active loans, total outstanding, next payment due)
+- Recent activity feed
+- Quick action buttons (apply, upload docs, view schedule)
 
-**On Fedora/RHEL/CentOS:**
-```bash
-sudo dnf install -y python3.12 python3.12-pip python3.12-devel \
-  postgresql16-server postgresql16-contrib redis
+---
+
+### Odoo Sync Layer
+
+**File:** `apps/loans/odoo_sync.py`
+
+Communicates with Odoo via the standard XML-RPC API using Python's built-in `xmlrpc.client`.
+
+```
+Django Portal  ──XML-RPC──►  Odoo
+                             /xmlrpc/2/common  (authenticate)
+                             /xmlrpc/2/object  (CRUD operations)
 ```
 
-**On Ubuntu/Debian:**
+**Document type mapping** (Django → Odoo):
+
+| Django value | Odoo value |
+|---|---|
+| `id_copy` | `id` |
+| `kra_pin` | `kra_pin` |
+| `passport_photo` | `id` |
+| `proof_of_address` | `other` |
+| `bank_statement` | `bank_statement` |
+| `mpesa_statement` | `mpesa_statement` |
+| `payslip` | `payslip` |
+| `business_license` | `other` |
+
+**Key sync operations:**
+
+| Function | Direction | Description |
+|---|---|---|
+| `sync_application_to_odoo(application)` | Django → Odoo | Creates/updates loan application in Odoo |
+| `sync_documents_to_odoo(application)` | Django → Odoo | Pushes base64-encoded documents |
+| `sync_repayment_schedule(application)` | Odoo → Django | Pulls repayment lines from Odoo |
+| `sync_loan_status(application)` | Odoo → Django | Pulls status updates from Odoo |
+
+---
+
+### Celery Tasks
+
+**Broker:** Redis (`REDIS_URL` env var)  
+**Scheduler:** `django-celery-beat` with `DatabaseScheduler`
+
+| Task | App | Description |
+|---|---|---|
+| `sync_loan_to_odoo` | loans | Async push of new/updated loan to Odoo |
+| `sync_all_loans` | loans | Full reconciliation sweep (periodic) |
+| `send_payment_reminder` | loans | Email reminder for upcoming installment |
+| `process_document_upload` | documents | Virus scan + compress + push to Odoo |
+| `send_welcome_email` | accounts | Triggered on new user registration |
+
+Start workers:
 ```bash
-sudo apt update
-sudo apt install -y python3.12 python3-pip python3.12-dev \
-  postgresql-16 postgresql-contrib redis-server
+# Worker
+celery -A config worker --loglevel=info
+
+# Beat scheduler
+celery -A config beat --loglevel=info \
+    --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+# Monitor (Flower)
+celery -A config flower --port=5555
 ```
 
-#### Step 2: Setup PostgreSQL
+---
 
+## Nginx Reverse Proxy
+
+Two config files are provided:
+
+| File | Use case | Upstream hostnames |
+|---|---|---|
+| `nginx/nginx.conf` | Bare-metal / systemd | `localhost` |
+| `nginx/nginx.docker.conf` | Docker Compose | `odoo`, `django` (service names) |
+
+**Routing table:**
+
+| Path | Upstream | Notes |
+|---|---|---|
+| `/websocket` | `odoo:8072` | WebSocket upgrade headers, 1h timeout |
+| `/longpolling` | `odoo:8072` | Long-poll, 1h timeout |
+| `/web` | `odoo:8069` | Odoo backend UI |
+| `/web/static/` | `odoo:8069` | Cached 90 days |
+| `/odoo` | `odoo:8069` | Odoo alternate prefix |
+| `/api/jsonrpc` | `odoo:8069` | Rate limited: 30 req/min |
+| `/portal` | `django:8000` | Client portal |
+| `/admin` | `django:8000` | Django admin |
+| `/accounts/login` | `django:8000` | Rate limited: 5 req/min |
+| `/static/` | filesystem | Django static files |
+| `/media/` | filesystem | Django media files |
+| `/health` | `django:8000` | Health check endpoint |
+| `/` | — | 301 → `/portal/` |
+
+---
+
+## Prerequisites
+
+### Bare Metal
+- Python **3.10+**
+- PostgreSQL **16**
+- Redis **7**
+- Nginx
+- Node.js 18+ (for Odoo asset bundling)
+- `wkhtmltopdf` (for Odoo PDF reports)
+
+### Docker
+- Docker **24+**
+- Docker Compose **v2** (plugin) or `docker-compose` **v1.29+**
+
+---
+
+## Local Development Setup (Bare Metal)
+
+### 1. Clone the repository
 ```bash
-# Initialize and start PostgreSQL
-sudo postgresql-setup --initdb --unit postgresql-16
-sudo systemctl enable postgresql-16
-sudo systemctl start postgresql-16
+git clone https://github.com/Kemboi14/Berit-shalvah.git
+cd Berit-shalvah
+```
 
-# Create databases and user
-sudo -u postgres psql << EOF
-CREATE USER berit_user WITH PASSWORD 'strong_password_here';
-CREATE DATABASE berit_odoo OWNER berit_user;
-CREATE DATABASE berit_portal OWNER berit_user;
-GRANT ALL PRIVILEGES ON DATABASE berit_odoo TO berit_user;
+### 2. Create PostgreSQL databases
+```bash
+sudo -u postgres psql << 'SQL'
+CREATE USER berit_user WITH PASSWORD 'berit123';
+CREATE DATABASE berit_odoo  OWNER berit_user TEMPLATE template0 ENCODING 'UTF8';
+CREATE DATABASE berit_portal OWNER berit_user TEMPLATE template0 ENCODING 'UTF8';
+GRANT ALL PRIVILEGES ON DATABASE berit_odoo   TO berit_user;
 GRANT ALL PRIVILEGES ON DATABASE berit_portal TO berit_user;
-\q
-EOF
+SQL
 ```
 
-#### Step 3: Setup Redis
-
+### 3. Set up the Odoo virtual environment
 ```bash
-sudo systemctl enable redis
-sudo systemctl start redis
+python3 -m venv odoo_env
+source odoo_env/bin/activate
+pip install -r /home/nick/odoo-19/requirements.txt
+deactivate
 ```
 
-#### Step 4: Clone and Setup Project
-
+### 4. Set up the Django virtual environment
 ```bash
-# Clone the repository
-git clone <your-repo-url> berit-shalvah
-cd berit-shalvah
+python3 -m venv django_env
+source django_env/bin/activate
+pip install -r django_portal/requirements.txt
+deactivate
+```
 
-# Create virtual environments
-python3.12 -m venv django_env
+### 5. Configure environment variables
+```bash
+cp .env.example .env
+# Edit .env with your values (see Environment Variables section)
+nano .env
+```
 
-# Setup Django Portal
+### 6. Run Django migrations
+```bash
 source django_env/bin/activate
 cd django_portal
-pip install -r requirements.txt
+export DJANGO_SETTINGS_MODULE=config.settings.development
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py collectstatic --noinput
+cd ..
+deactivate
 ```
 
-#### Step 5: Configure Environment
+### 7. Apply Nginx config
+```bash
+sudo cp nginx/nginx.conf /etc/nginx/nginx.conf
+sudo nginx -t
+sudo systemctl reload nginx
+```
 
-Create `.env` file:
+### 8. Start everything
+```bash
+chmod +x start_system_improved.sh
+./start_system_improved.sh
+```
+
+Or with debug output:
+```bash
+./start_system_improved.sh --debug
+```
+
+---
+
+## Docker Setup
+
+### Development
+```bash
+cp .env.example .env
+# Edit .env
+docker-compose up --build
+```
+
+### First-time initialisation (run once after `up`)
+```bash
+# Install the Odoo module
+docker-compose exec odoo odoo \
+    --addons-path=/opt/odoo/addons,/mnt/extra-addons \
+    -d berit_odoo -i berit_loan --stop-after-init
+
+# Run Django migrations
+docker-compose exec django python manage.py migrate
+
+# Create Django admin user
+docker-compose exec django python manage.py createsuperuser
+
+# Collect static files
+docker-compose exec django python manage.py collectstatic --noinput
+```
+
+### Using the setup script (does all the above automatically)
+```bash
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+```
+
+### Production
+```bash
+docker-compose -f docker-compose.prod.yml up --build -d
+```
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in the values below.
 
 ```bash
-# Database Configuration
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+# ── PostgreSQL ──────────────────────────────────────────────────────────────
 POSTGRES_USER=berit_user
-POSTGRES_PASSWORD=strong_password_here
+POSTGRES_PASSWORD=your_secure_password_here
+POSTGRES_DB=berit_odoo
 ODOO_DB=berit_odoo
 PORTAL_DB=berit_portal
 
-# Redis Configuration
+# ── Odoo ────────────────────────────────────────────────────────────────────
+ODOO_MASTER_PASSWORD=your_odoo_master_password_here
+
+# ── Django ──────────────────────────────────────────────────────────────────
+SECRET_KEY=your_django_secret_key_here_50+_chars
+DEBUG=True                          # Set False in production
+ALLOWED_HOSTS=localhost,127.0.0.1   # Comma-separated, add your domain in prod
+
+# ── Redis / Celery ───────────────────────────────────────────────────────────
 REDIS_URL=redis://localhost:6379/0
 
-# Django Configuration
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Email Configuration
+# ── Email (SMTP) ─────────────────────────────────────────────────────────────
 EMAIL_HOST=smtp.gmail.com
+EMAIL_HOST_USER=your_email@gmail.com
+EMAIL_HOST_PASSWORD=your_gmail_app_password
 EMAIL_PORT=587
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-DEFAULT_FROM_EMAIL=Berit Shalvah <noreply@beritshalvah.co.ke>
+EMAIL_USE_TLS=True
 
-# Odoo Configuration
-ODOO_URL=http://localhost:8069
-ODOO_DB=berit_odoo
-ODOO_USERNAME=admin
-ODOO_PASSWORD=admin
-ODOO_MASTER_PASSWORD=admin
-
-# Webhook Configuration
-ODOO_WEBHOOK_SECRET=your_webhook_secret_key
+# ── Portal ───────────────────────────────────────────────────────────────────
+PORTAL_BASE_URL=http://localhost:8000
 ```
 
-#### Step 6: Initialize Django
-
-```bash
-cd django_portal
-source ../django_env/bin/activate
-
-# Apply migrations
-python manage.py makemigrations
-python manage.py migrate
-
-# Create superuser
-python manage.py createsuperuser
-
-# Collect static files
-python manage.py collectstatic --noinput
-
-# Verify system
-python manage.py check
-```
+> **Security:** Never commit `.env` to version control. It is already listed in `.gitignore`.  
+> For Gmail, use an [App Password](https://support.google.com/accounts/answer/185833), not your account password.
 
 ---
 
-## Configuration
+## Database Setup
 
-### Django Settings
+Two separate PostgreSQL databases are used:
 
-Main configuration file: `django_portal/config/settings/base.py`
+| Database | Purpose | Owner |
+|---|---|---|
+| `berit_odoo` | All Odoo data (loans, partners, accounting) | `berit_user` |
+| `berit_portal` | Django portal (users, sessions, Celery results) | `berit_user` |
 
-Key settings:
-
-```python
-# Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('PORTAL_DB', 'berit_portal'),
-        'USER': os.getenv('POSTGRES_USER', 'berit_user'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
-    }
-}
-
-# Redis Cache
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0'),
-    }
-}
-
-# Celery Configuration
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
-
-# Odoo Configuration
-ODOO_URL = os.getenv('ODOO_URL', 'http://localhost:8069')
-ODOO_DB = os.getenv('ODOO_DB', 'berit_odoo')
-ODOO_USERNAME = os.getenv('ODOO_USERNAME', 'admin')
-ODOO_PASSWORD = os.getenv('ODOO_PASSWORD', 'admin')
-ODOO_WEBHOOK_SECRET = os.getenv('ODOO_WEBHOOK_SECRET', '')
+### Backup
+```bash
+chmod +x scripts/backup.sh
+./scripts/backup.sh
+# Backups are saved to ./backups/
 ```
 
-### Celery Configuration
+### Restore
+```bash
+# Odoo
+pg_restore -U berit_user -d berit_odoo backups/berit_odoo_YYYYMMDD.dump
 
-Celery periodic tasks are defined in `config/settings/base.py`:
-
-```python
-CELERY_BEAT_SCHEDULE = {
-    'sync-all-loans': {
-        'task': 'apps.loans.sync.sync_tasks.sync_all_loans_periodic',
-        'schedule': crontab(minute=0, hour='*/6'),  # Every 6 hours
-    },
-    'retry-failed-syncs': {
-        'task': 'apps.loans.sync.sync_tasks.retry_failed_syncs',
-        'schedule': crontab(minute='*/15'),  # Every 15 minutes
-    },
-    'cleanup-old-sync-events': {
-        'task': 'apps.loans.sync.sync_tasks.cleanup_old_sync_events',
-        'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
-    },
-}
-```
-
-### Odoo Configuration
-
-Odoo configuration file: `odoo/odoo.conf`
-
-Key settings:
-
-```ini
-[options]
-addons_path = /opt/odoo/addons,/mnt/extra-addons
-admin_passwd = your_master_password
-db_host = postgres
-db_port = 5432
-db_user = odoo
-db_password = odoo
-db_filter = berit_odoo
-max_cron_threads = 2
-workers = 4
-timeout = 120
+# Portal
+pg_restore -U berit_user -d berit_portal backups/berit_portal_YYYYMMDD.dump
 ```
 
 ---
 
 ## Running the System
 
-### Quick Reference: System Startup
-
-**Fastest way to start everything:**
+### Start all services (recommended)
 ```bash
-cd /home/nick/berit-shalvah && chmod +x start_system.sh && ./start_system.sh
+./start_system_improved.sh
 ```
 
-This runs all services automatically. See [Using the Start Script](#using-the-start-script) section for details and troubleshooting.
-
-**Alternative: Using Docker Compose**
-
-#### Start All Services
+### Start with options
 ```bash
-docker-compose up -d
+./start_system_improved.sh --debug       # Verbose Odoo + Django output
+./start_system_improved.sh --no-celery   # Skip Celery (useful for debugging)
+./start_system_improved.sh --no-odoo     # Skip Odoo (portal-only mode)
 ```
 
-#### View Logs
+### Access URLs after startup
+
+| Service | URL | Credentials |
+|---|---|---|
+| Client Portal | http://localhost/portal | Register as new client |
+| Django Admin | http://localhost/admin | Superuser created during setup |
+| Odoo Backend | http://localhost/web | admin / (set in .env) |
+| Odoo Direct | http://localhost:8069/web | Same as above |
+| Celery Flower | http://localhost:5555 | (no auth in dev) |
+
+### Check port bindings
 ```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f django
-docker-compose logs -f odoo
-docker-compose logs -f celery
+ss -tlnp | grep -E '80|8069|8072|8000|5432|6379'
 ```
 
-#### Stop Services
+### View logs
 ```bash
-docker-compose down
-```
+# All services (startup script log)
+tail -f logs/startup_*.log
 
-### Local Development (Without Docker)
+# Odoo
+tail -f /var/log/odoo/odoo.log
 
-#### Terminal 1: Start Django Development Server
-```bash
-cd django_portal
-source ../django_env/bin/activate
-python manage.py runserver 0.0.0.0:8000
-```
+# Celery worker
+tail -f logs/celery_worker.log
 
-#### Terminal 2: Start Celery Worker
-```bash
-cd django_portal
-source ../django_env/bin/activate
-celery -A config worker -l info
-```
+# Celery beat
+tail -f logs/celery_beat.log
 
-#### Terminal 3: Start Celery Beat (Scheduler)
-```bash
-cd django_portal
-source ../django_env/bin/activate
-celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-```
-
-#### Terminal 4: Start Odoo (Optional)
-```bash
-cd odoo
-source ../odoo_env/bin/activate
-python odoo-bin --config=odoo.conf --db-filter=berit_odoo
-```
-
-### Access the Applications
-
-Once services are running:
-
-- **Django Portal:** http://localhost:8000
-- **Django Admin:** http://localhost:8000/admin
-- **Odoo Backend:** http://localhost:8069
-- **Nginx (Production):** http://localhost
-
----
-
-## Odoo ↔ Django Synchronization
-
-### How Synchronization Works
-
-The sync system uses the `PerfectOdooSync` class in `apps/loans/sync/perfect_sync.py`:
-
-#### 1. Initialization
-
-```python
-from apps.loans.sync.perfect_sync import PerfectOdooSync
-
-# Initialize the sync engine
-sync = PerfectOdooSync()
-
-# Test connection to Odoo
-if sync.test_connection():
-    print("Connected to Odoo successfully!")
-```
-
-#### 2. Sync Loan to Odoo (Django → Odoo)
-
-```python
-from apps.loans.models import LoanApplication
-
-# Get a loan
-loan = LoanApplication.objects.get(id='<loan_id>')
-
-# Sync to Odoo (automatic retry, locking, error handling)
-result = sync.sync_loan_to_odoo(loan)
-
-print(result)
-# {
-#     'success': True,
-#     'odoo_record_id': 123,
-#     'status': 'completed',
-#     'synced_at': '2025-03-10T10:30:00Z'
-# }
-```
-
-#### 3. Sync Loan from Odoo (Odoo → Django)
-
-```python
-# Pull latest data from Odoo
-result = sync.sync_loan_from_odoo(loan)
-
-print(result)
-# {
-#     'success': True,
-#     'status': 'updated',
-#     'fields_updated': ['status', 'repayment_amount'],
-#     'synced_at': '2025-03-10T10:30:00Z'
-# }
-```
-
-#### 4. Full Bidirectional Sync
-
-```python
-# Sync all loans
-result = sync.sync_all_loans()
-
-print(result)
-# {
-#     'total': 150,
-#     'succeeded': 148,
-#     'failed': 2,
-#     'conflicts': 1
-# }
-```
-
-### Sync Models
-
-Four main models track synchronization:
-
-#### SyncEvent
-Tracks all sync operations with full audit trail:
-
-```python
-from apps.loans.sync.webhook_models import SyncEvent
-
-# View all sync events
-events = SyncEvent.objects.all()
-
-# Filter by status
-failed_syncs = SyncEvent.objects.filter(status='failed')
-
-# View details
-for event in failed_syncs:
-    print(f"Event: {event.event_type}")
-    print(f"Status: {event.status}")
-    print(f"Error: {event.error_message}")
-    print(f"Retries: {event.retry_count}")
-```
-
-#### SyncConflict
-Records and resolves data conflicts:
-
-```python
-from apps.loans.sync.webhook_models import SyncConflict
-
-# View all conflicts
-conflicts = SyncConflict.objects.all()
-
-# Resolve a conflict (use Django data)
-conflict = conflicts.first()
-conflict.resolution = 'use_django_data'
-conflict.save()
-
-# Or use Odoo data
-conflict.resolution = 'use_odoo_data'
-conflict.save()
-```
-
-#### SyncLock
-Prevents race conditions:
-
-```python
-from apps.loans.sync.webhook_models import SyncLock
-
-# View active locks
-active_locks = SyncLock.objects.filter(is_released=False)
-
-# Check if a resource is locked
-is_locked = SyncLock.objects.filter(
-    lock_type='loan',
-    resource_id='123',
-    is_released=False
-).exists()
-```
-
-#### WebhookSubscription
-Manages webhook subscriptions:
-
-```python
-from apps.loans.sync.webhook_models import WebhookSubscription
-
-# View all subscriptions
-subs = WebhookSubscription.objects.all()
-
-# Create new subscription
-sub = WebhookSubscription.objects.create(
-    event='loan.created',
-    webhook_url='https://example.com/webhook',
-    secret_key='your_secret_key',
-    is_active=True
-)
-```
-
-### Celery Tasks
-
-Background sync tasks are defined in `apps/loans/sync/sync_tasks.py`:
-
-```python
-# Immediate sync (queued)
-from apps.loans.sync.sync_tasks import sync_loan_to_odoo_async
-
-sync_loan_to_odoo_async.delay(loan_id='123')
-
-# Periodic sync (runs on schedule)
-# - Every 6 hours: sync_all_loans_periodic
-# - Every 15 minutes: retry_failed_syncs
-# - Daily at 2 AM: cleanup_old_sync_events
-
-# View task status
-from celery.result import AsyncResult
-
-task = AsyncResult('task_id')
-print(task.status)  # PENDING, STARTED, SUCCESS, FAILURE, RETRY
-print(task.result)
-```
-
-### Webhook Integration
-
-Odoo sends webhooks to Django when loans are updated:
-
-#### Setting Up Odoo Webhook
-
-1. Go to Odoo admin
-2. Settings → Webhooks
-3. Create new webhook:
-   - Event: `loan.updated`
-   - URL: `http://django-host/api/webhook/odoo/`
-   - Secret: (from `.env` ODOO_WEBHOOK_SECRET)
-
-#### Django Webhook Endpoint
-
-```
-POST /api/webhook/odoo/
-Headers:
-  Content-Type: application/json
-  X-Odoo-Signature: <HMAC-SHA256 signature>
-
-Body:
-{
-  "event_type": "loan.updated",
-  "record_id": 123,
-  "data": {
-    "name": "LOAN-001",
-    "portal_application_ref": "django-123",
-    "state": "approved",
-    "loan_amount": 50000.00
-  }
-}
-```
-
-#### Webhook Payload Examples
-
-**Loan Created:**
-```json
-{
-  "event_type": "loan.created",
-  "record_id": 123,
-  "data": {
-    "name": "LOAN-2025-001",
-    "portal_application_ref": "django-456",
-    "loan_amount": 100000.00,
-    "loan_duration": 12,
-    "state": "draft"
-  }
-}
-```
-
-**Loan Approved:**
-```json
-{
-  "event_type": "loan.approved",
-  "record_id": 123,
-  "data": {
-    "portal_application_ref": "django-456",
-    "state": "approved",
-    "approval_date": "2025-03-10T10:30:00Z"
-  }
-}
-```
-
-**Repayment Recorded:**
-```json
-{
-  "event_type": "repayment.recorded",
-  "record_id": 123,
-  "data": {
-    "portal_application_ref": "django-456",
-    "installment_number": 1,
-    "amount_paid": 12500.00,
-    "payment_method": "mpesa",
-    "payment_reference": "MPESA-789"
-  }
-}
-```
-
-### Monitoring Sync Events
-
-#### Via Django Admin
-
-1. Go to: `/admin/sync/syncevent/`
-2. View all sync operations
-3. Filter by:
-   - Status (pending, processing, completed, failed, retry)
-   - Event type (loan_created, loan_updated, etc.)
-   - Direction (django_to_odoo, odoo_to_django)
-4. Click any event to see full details:
-   - Payload (what was sent)
-   - Response (what came back)
-   - Error messages and tracebacks
-   - Retry count and schedule
-
-#### Via Django Shell
-
-```python
-python manage.py shell
-
-from apps.loans.sync.webhook_models import SyncEvent
-
-# Get failed syncs
-failed = SyncEvent.objects.filter(status='failed').order_by('-created_at')
-
-for event in failed:
-    print(f"{event.event_type}: {event.error_message}")
-    print(f"Next retry: {event.next_retry_at}")
-    print("---")
-
-# Get sync statistics
-from django.db.models import Count, Q
-
-stats = SyncEvent.objects.aggregate(
-    total=Count('id'),
-    succeeded=Count('id', filter=Q(status='completed')),
-    failed=Count('id', filter=Q(status='failed')),
-    pending=Count('id', filter=Q(status='pending'))
-)
-
-print(f"Total: {stats['total']}")
-print(f"Succeeded: {stats['succeeded']}")
-print(f"Failed: {stats['failed']}")
-print(f"Pending: {stats['pending']}")
-```
-
-### Troubleshooting Sync Issues
-
-#### Issue: "Connection refused" to Odoo
-
-**Symptoms:**
-- Sync fails with "Connection refused"
-- Error: `xmlrpc.client.TransportError`
-
-**Solution:**
-```bash
-# 1. Verify Odoo is running
-curl -I http://localhost:8069
-
-# 2. Check Odoo credentials in .env
-echo $ODOO_URL
-echo $ODOO_DB
-echo $ODOO_USERNAME
-
-# 3. Test connection from Django shell
-python manage.py shell
-
-from apps.loans.sync.perfect_sync import PerfectOdooSync
-sync = PerfectOdooSync()
-result = sync.test_connection()
-print(result)
-
-# 4. Check firewall/network
-telnet localhost 8069
-```
-
-#### Issue: Sync stuck in "pending" status
-
-**Symptoms:**
-- SyncEvent status remains "pending"
-- Celery tasks not executing
-
-**Solution:**
-```bash
-# 1. Check Celery worker is running
-celery -A config inspect active
-
-# 2. Check Redis connection
-redis-cli ping
-
-# 3. View Celery logs
-celery -A config worker -l debug
-
-# 4. Manually retry stuck sync
-python manage.py shell
-
-from apps.loans.sync.webhook_models import SyncEvent
-event = SyncEvent.objects.get(id='<event_id>')
-event.status = 'retry'
-event.save()
-
-# 5. Run sync manually
-from apps.loans.sync.perfect_sync import PerfectOdooSync
-from apps.loans.models import LoanApplication
-
-loan = LoanApplication.objects.get(id='<loan_id>')
-sync = PerfectOdooSync()
-result = sync.sync_loan_to_odoo(loan)
-print(result)
-```
-
-#### Issue: Data conflicts between Django and Odoo
-
-**Symptoms:**
-- SyncConflict records appear in admin
-- Data is inconsistent between systems
-
-**Solution:**
-```bash
-# 1. View all conflicts
-python manage.py shell
-
-from apps.loans.sync.webhook_models import SyncConflict
-conflicts = SyncConflict.objects.filter(resolution='pending')
-
-for conflict in conflicts:
-    print(f"Resource: {conflict.resource_type} {conflict.resource_id}")
-    print(f"Django: {conflict.django_data}")
-    print(f"Odoo: {conflict.odoo_data}")
-    print(f"Conflicting fields: {conflict.conflict_fields}")
-    print("---")
-
-# 2. Resolve conflict (manual)
-conflict = conflicts.first()
-conflict.resolution = 'use_django_data'  # or 'use_odoo_data'
-conflict.save()
-
-# 3. Re-sync the record
-from apps.loans.models import LoanApplication
-from apps.loans.sync.perfect_sync import PerfectOdooSync
-
-loan = LoanApplication.objects.get(id=conflict.resource_id)
-sync = PerfectOdooSync()
-sync.sync_loan_to_odoo(loan, force_create=True)
+# Nginx
+sudo tail -f /var/log/nginx/error.log
 ```
 
 ---
 
-## Loan Application UI
+## Deployment (Production)
 
-### Multi-Step Wizard
+### 1. Server requirements
+- Ubuntu 22.04 LTS or RHEL 9 / Fedora 38+
+- 4 vCPU, 8 GB RAM minimum
+- 50 GB SSD
 
-The loan application wizard guides users through a 5-step process:
-
-#### Step 1: Personal & Loan Details
-- First Name, Last Name, Email, Phone
-- Loan Amount: 1,000 - 5,000,000 KES
-- Loan Purpose
-- Employment Type
-- Preferred Loan Term: 1-60 months
-- Real-time interest rate calculation
-- Monthly payment preview
-
-#### Step 2: Personal Information
-- Date of Birth
-- National ID / Passport Number
-- KRA PIN
-- Current Address
-- Identification document uploads
-
-#### Step 3: Employment Details
-- Current Employment Status
-- Employer Name
-- Job Title
-- Monthly Income
-- Employment contract document
-- Latest payslip document
-
-#### Step 4: Supporting Documents
-- National ID Copy
-- KRA PIN Certificate
-- CRB Clearance Certificate
-- Bank Statements (3 months)
-- Payslips (3 months)
-- Collateral Proof of Ownership
-- Collateral Valuation Report
-
-#### Step 5: Review & Confirm
-- Review all entered information
-- Final confirmation checkbox
-- Submit button
-- Application syncs to Odoo automatically
-
-### Client Dashboard
-
-The client dashboard displays:
-
-#### Key Metrics
-- Total Active Loans
-- Total Amount Borrowed
-- Profile Completion Percentage
-- Pending Applications
-
-#### Recent Applications Section
-- List of latest loan applications
-- Status indicator (draft, submitted, approved, rejected, disbursed)
-- Loan amount and duration
-- Application date
-- Quick actions (view, edit, track)
-
-#### Upcoming Repayments Section
-- Next repayment due date
-- Payment amount
-- Days until due
-- Quick pay button
-- Payment history
-
-#### Quick Actions Sidebar
-- New Loan Application button
-- View All Applications button
-- Download Documents button
-- Payment Methods button
-- Support Contact button
-
-#### Sync Status Widget
-- Real-time sync status
-- Last synced timestamp
-- Sync status indicator (synced, syncing, error)
-- Retry button for failed syncs
-
-### Interest Rates
-
-| Loan Amount (KES) | Monthly Interest Rate |
-|------------------|---------------------|
-| 1 – 99,999 | 20% |
-| 100,000 – 399,999 | 17.5% |
-| 400,000 – 599,999 | 15% |
-| 600,000 – 799,999 | 10% |
-| 800,000 – 999,999 | 7.5% |
-| 1,000,000 and above | 5% |
-
-**Formula:**
-```
-Monthly Repayment = (Loan Amount × Monthly Rate) + (Loan Amount ÷ Duration)
-Total Repayable = Monthly Repayment × Duration
-```
-
-### Loan Requirements
-
-The system enforces collection of:
-
-1. **Written loan request** - Amount, duration, purpose
-2. **National ID/Passport** - Copy of government-issued ID
-3. **KRA PIN certificate** - Tax identification proof
-4. **CRB clearance** - Credit reference bureau clearance
-5. **Collateral proof** - Ownership documents + valuation (1.5× loan amount)
-6. **Financial documents** - Mpesa/bank statements, payslips
-7. **Guarantor information** - Co-signer details and documentation
-8. **Legal fee** - 2.5% of loan amount
-
----
-
-## Admin Interface
-
-### Django Admin Features
-
-#### SyncEvent Admin
-- View all sync operations
-- Filter by status, event type, direction
-- Search by loan ID or Odoo record ID
-- See full payload and error details
-- Retry failed syncs
-- Export to CSV
-
-#### SyncConflict Admin
-- View detected data conflicts
-- Compare Django vs Odoo data
-- Auto-resolve or manual merge
-- Track resolution history
-- Export conflict reports
-
-#### SyncLock Admin
-- View active distributed locks
-- Monitor lock duration
-- Identify locked resources
-- Release stuck locks (dangerous - use carefully)
-
-#### WebhookSubscription Admin
-- Create webhook subscriptions
-- Configure Odoo events
-- Set webhook URLs and secrets
-- Monitor subscription health
-- View webhook delivery logs
-
-### Admin Tasks
-
-#### Check Sync Status
-```
-1. Go to /admin/sync/syncevent/
-2. Filter by Status = "Failed"
-3. Review error messages
-4. Click event to see full traceback
-```
-
-#### Retry Failed Sync
-```
-1. Find the failed event
-2. Click "Retry" button
-3. Event status changes to "Retry"
-4. Scheduled for automatic retry
-```
-
-#### Resolve Data Conflict
-```
-1. Go to /admin/sync/syncconflict/
-2. Select conflict
-3. Choose resolution:
-   - Use Django Version
-   - Use Odoo Version
-   - Manually Merged
-4. Save and re-sync
-```
-
-#### Monitor Webhook Health
-```
-1. Go to /admin/sync/webhooksubscription/
-2. View health metrics
-3. Check delivery status
-4. Enable/disable subscriptions as needed
-```
-
----
-
-## Deployment
-
-### Pre-Deployment Checklist
-
-#### Environment Verification
-- [ ] Python 3.8+ installed
-- [ ] Django 5.0+ installed
-- [ ] PostgreSQL 12+ installed and running
-- [ ] Redis 5+ installed and running
-- [ ] All required packages installed
-- [ ] Virtual environment activated
-- [ ] `.env` file created with all variables
-
-#### Database Preparation
-- [ ] PostgreSQL user created
-- [ ] PostgreSQL database created
-- [ ] Database user has proper permissions
-- [ ] Database connection tested
-- [ ] Database backup created
-
-#### Configuration Verification
-- [ ] ODOO_URL set correctly
-- [ ] ODOO_DB set correctly
-- [ ] ODOO credentials verified
-- [ ] DATABASE settings correct
-- [ ] SECRET_KEY is strong and unique
-- [ ] DEBUG is False in production
-- [ ] ALLOWED_HOSTS configured
-
-#### Odoo Connection Verification
-- [ ] Odoo instance running
-- [ ] Odoo accessible at configured URL
-- [ ] Odoo credentials correct
-- [ ] berit_loan module installed
-- [ ] XML-RPC API enabled
-- [ ] Test connection successful
-
-### Docker Deployment
-
-#### Build Images
+### 2. SSL certificate
 ```bash
-docker-compose -f docker-compose.prod.yml build
+mkdir -p nginx/ssl
+# Place your certificate files:
+#   nginx/ssl/cert.pem
+#   nginx/ssl/key.pem
+# Or use Let's Encrypt:
+sudo certbot certonly --nginx -d yourdomain.com
 ```
 
-#### Initialize Services
+### 3. Update nginx config for SSL
+Uncomment the SSL server block at the bottom of `nginx/nginx.conf` (or `nginx.docker.conf`) and update:
+```
+server_name yourdomain.com www.yourdomain.com;
+ssl_certificate     /etc/nginx/ssl/cert.pem;
+ssl_certificate_key /etc/nginx/ssl/key.pem;
+```
+
+### 4. Update environment
 ```bash
-# Start infrastructure (db, redis)
-docker-compose -f docker-compose.prod.yml up -d postgres redis
-
-# Wait for services to be ready
-sleep 30
-
-# Run migrations
-docker-compose -f docker-compose.prod.yml exec django \
-  python manage.py migrate
-
-# Create superuser
-docker-compose -f docker-compose.prod.yml exec django \
-  python manage.py createsuperuser
-
-# Collect static files
-docker-compose -f docker-compose.prod.yml exec django \
-  python manage.py collectstatic --noinput
+# In .env
+DEBUG=False
+ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
+PORTAL_BASE_URL=https://yourdomain.com
 ```
 
-#### Start All Services
+### 5. Deploy with Docker Compose
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
-#### Verify Deployment
-```bash
-# Check service status
-docker-compose -f docker-compose.prod.yml ps
+### 6. Update `web.base.url` in Odoo
+Log in to Odoo → Settings → Technical → System Parameters → `web.base.url`  
+Set to `https://yourdomain.com`
 
-# View logs
-docker-compose -f docker-compose.prod.yml logs -f
-
-# Test endpoints
-curl http://localhost/admin/
-curl http://localhost:8069
-```
-
-### Gunicorn Configuration
-
-Production server configuration:
-
-```bash
-# Start Gunicorn
-gunicorn \
-  --bind 0.0.0.0:8000 \
-  --workers 4 \
-  --worker-class sync \
-  --timeout 120 \
-  --access-logfile - \
-  --error-logfile - \
-  config.wsgi:application
-```
-
-Or use systemd service:
-
+### Production Odoo config (`odoo.conf`)
 ```ini
-[Unit]
-Description=Berit Shalvah Django Portal
-After=network.target
-
-[Service]
-Type=notify
-User=www-data
-Group=www-data
-WorkingDirectory=/var/www/berit-shalvah/django_portal
-Environment="PATH=/var/www/berit-shalvah/django_env/bin"
-ExecStart=/var/www/berit-shalvah/django_env/bin/gunicorn \
-  --bind 0.0.0.0:8000 \
-  --workers 4 \
-  config.wsgi:application
-
-[Install]
-WantedBy=multi-user.target
+workers = 4
+gevent_port = 8072
+limit_time_cpu = 600
+limit_time_real = 1200
+proxy_mode = True
+log_level = warn
 ```
 
-### Nginx Configuration
+---
 
-Reverse proxy setup:
+## API Integration Reference
 
-```nginx
-upstream django {
-    server localhost:8000;
-}
+### Odoo XML-RPC endpoints
 
-server {
-    listen 80;
-    server_name example.com;
-    
-    client_max_body_size 20M;
-    
-    location / {
-        proxy_pass http://django;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-    
-    location /static/ {
-        alias /var/www/berit-shalvah/django_portal/staticfiles/;
-    }
-    
-    location /media/ {
-        alias /var/www/berit-shalvah/django_portal/media/;
-    }
-}
+| Endpoint | Purpose |
+|---|---|
+| `/xmlrpc/2/common` | Authentication (`authenticate`) |
+| `/xmlrpc/2/object` | Model CRUD (`execute_kw`) |
+
+### Authenticate
+```python
+import xmlrpc.client
+
+url = "http://localhost:8069"
+db, username, password = "berit_odoo", "admin", "admin"
+
+common = xmlrpc.client.ServerProxy(f"{url}/xmlrpc/2/common")
+uid = common.authenticate(db, username, password, {})
+```
+
+### Read loan applications
+```python
+models = xmlrpc.client.ServerProxy(f"{url}/xmlrpc/2/object")
+
+loans = models.execute_kw(db, uid, password,
+    "berit.loan.application", "search_read",
+    [[["state", "=", "active"]]],
+    {"fields": ["name", "loan_amount", "state", "applicant_id"]}
+)
+```
+
+### Create a loan application
+```python
+loan_id = models.execute_kw(db, uid, password,
+    "berit.loan.application", "create",
+    [{
+        "applicant_id": partner_id,
+        "loan_amount": 150000.0,
+        "loan_duration": 6,
+        "loan_purpose": "Business expansion",
+    }]
+)
+```
+
+### Django portal REST endpoints (internal)
+
+| Method | URL | Description |
+|---|---|---|
+| `GET` | `/portal/` | Portal home / redirect |
+| `GET/POST` | `/portal/loans/apply/` | Start loan application wizard |
+| `GET` | `/portal/loans/` | List client's loan applications |
+| `GET` | `/portal/loans/<uuid>/` | Loan detail + repayment schedule |
+| `POST` | `/portal/documents/upload/` | Upload a document |
+| `GET` | `/portal/dashboard/` | Client dashboard |
+| `GET` | `/health/` | Health check (returns 200 OK) |
+| `POST` | `/api/webhook/odoo/` | Odoo → Django status webhook |
+
+---
+
+## Loan Business Rules Reference
+
+### Application Flow
+```
+1. Client registers on portal → KYC documents uploaded
+2. Client submits loan application (amount, duration, purpose, employment)
+3. Documents uploaded (ID, KRA PIN, payslips, bank statements)
+4. Application synced to Odoo via XML-RPC
+5. Loan officer reviews in Odoo:
+   a. Verifies collateral (must be ≥ 1.5× loan amount)
+   b. Verifies guarantor(s)
+   c. Checks CRB clearance
+   d. Approves / rejects
+6. On approval → repayment schedule auto-generated in Odoo
+7. Schedule synced back to Django portal
+8. Daily crons: mark overdue, send reminders, check document expiry
+9. On full repayment → loan marked closed
+10. If >30 days overdue → loan marked defaulted
+```
+
+### Repayment Calculation
+```
+Monthly Repayment = (Loan Amount × Monthly Rate) + (Loan Amount / Duration)
+Total Repayable   = Monthly Repayment × Duration
+Legal Fee         = Loan Amount × 2.5%
+Penalty           = Total Installment Due × 1% × Days Overdue
 ```
 
 ---
 
 ## Troubleshooting
 
-### Common Issues & Solutions
+### WebSocket error: "Couldn't bind the websocket. Is the connection opened on the evented port (8072)?"
+Odoo's gevent worker is not running or Nginx is not routing to it.
 
-#### Issue: "Connection refused" - PostgreSQL
-
-**Error:**
-```
-psycopg2.OperationalError: could not connect to server
-```
-
-**Solution:**
 ```bash
-# 1. Check PostgreSQL is running
-sudo systemctl status postgresql-16
+# Verify gevent port in odoo.conf
+grep -E "gevent_port|workers" odoo/odoo.conf
+# Must have: workers >= 2 AND gevent_port = 8072
 
-# 2. Start PostgreSQL if not running
-sudo systemctl start postgresql-16
+# Verify Nginx routes /websocket to port 8072
+grep -A5 "location /websocket" nginx/nginx.conf
 
-# 3. Verify connection
-psql -h localhost -U berit_user -d berit_portal -c "SELECT 1"
-
-# 4. Check .env file
-grep POSTGRES_HOST .env
-grep POSTGRES_PORT .env
+# Restart with explicit gevent port
+python odoo-bin --config=odoo/odoo.conf --gevent-port=8072
 ```
 
-#### Issue: "Connection refused" - Redis
+### `ParseError: forbidden opcode(s) IMPORT_NAME, IMPORT_FROM` in cron XML
+Odoo cron `code` fields run in a sandboxed interpreter that blocks `import` statements.
 
-**Error:**
-```
-redis.exceptions.ConnectionError: Connection refused
+**Fix:** Move all logic into a model method and call only `model.method_name()` in the XML.
+
+```xml
+<!-- WRONG -->
+<field name="code">
+from dateutil.relativedelta import relativedelta
+...
+</field>
+
+<!-- CORRECT -->
+<field name="code">model.send_due_soon_reminders()</field>
 ```
 
-**Solution:**
+### `relation "ir_module_module" does not exist` warning for `berit_portal`
+The `berit_portal` database exists in PostgreSQL but has never had Odoo installed into it.
+This is harmless — Odoo's cron poller tries all known databases.
+
 ```bash
-# 1. Check Redis is running
-sudo systemctl status redis
-
-# 2. Start Redis if not running
-sudo systemctl start redis
-
-# 3. Test connection
-redis-cli ping
-
-# 4. Check Redis URL in .env
-grep REDIS_URL .env
+# To silence it permanently, drop the empty database:
+dropdb -U berit_user berit_portal
+# Then recreate it properly (Django only uses it, not Odoo):
+createdb -U berit_user berit_portal
 ```
 
-#### Issue: "No module named 'apps.loans.sync'"
+### Django portal `502 Bad Gateway`
+Django is not running or crashed.
 
-**Error:**
-```
-ModuleNotFoundError: No module named 'apps.loans.sync'
-```
-
-**Solution:**
 ```bash
-# 1. Verify sync app is in INSTALLED_APPS
-grep -n "apps.loans.sync" django_portal/config/settings/base.py
+# Check if Django process is alive
+ps aux | grep "manage.py runserver"
 
-# 2. Check sync module exists
-ls -la django_portal/apps/loans/sync/
+# Check Django logs
+tail -50 logs/startup_*.log
 
-# 3. Verify migrations folder
-ls -la django_portal/apps/loans/sync/migrations/
-
-# 4. Run migrations
-python django_portal/manage.py migrate
+# Restart manually
+source django_env/bin/activate
+cd django_portal
+python manage.py runserver 0.0.0.0:8000
 ```
 
-#### Issue: Odoo XML-RPC timeout
-
-**Error:**
-```
-socket.timeout: timed out
-```
-
-**Solution:**
+### Celery tasks not running
 ```bash
-# 1. Check Odoo is running
-curl -I http://localhost:8069
+# Check Redis is up
+redis-cli ping   # Should return PONG
 
-# 2. Increase timeout in settings
-# Edit django_portal/config/settings/base.py
-ODOO_TIMEOUT = 30  # Increase from default
-
-# 3. Check network connectivity
-telnet localhost 8069
-
-# 4. Check Odoo logs
-tail -f odoo/logs/odoo.log
-```
-
-#### Issue: Celery tasks not executing
-
-**Error:**
-```
-No pending messages
-```
-
-**Solution:**
-```bash
-# 1. Verify Celery worker is running
-celery -A config inspect active
-
-# 2. Check Redis connection
-redis-cli ping
-
-# 3. Restart Celery worker
-pkill -f "celery -A config worker"
-celery -A config worker -l info
-
-# 4. Verify Celery configuration
-python django_portal/manage.py shell
-from django.conf import settings
-print(settings.CELERY_BROKER_URL)
-print(settings.CELERY_RESULT_BACKEND)
-
-# 5. Check task queue
-celery -A config inspect active_queues
-
-# 6. View task logs
-celery -A config events
-```
-
-#### Issue: Sync events stuck in pending
-
-**Symptoms:**
-- SyncEvent.status = 'pending'
-- Not being processed
-
-**Solution:**
-```bash
-# 1. Check Celery is running
+# Check worker is running
 ps aux | grep celery
 
-# 2. View pending tasks
-celery -A config inspect reserved
+# Check beat is running
+tail -f logs/celery_beat.log
 
-# 3. Manually trigger sync
-python django_portal/manage.py shell
-
-from apps.loans.sync.sync_tasks import sync_loan_to_odoo_async
-from apps.loans.models import LoanApplication
-
-loan = LoanApplication.objects.first()
-result = sync_loan_to_odoo_async.delay(loan_id=str(loan.id))
-print(result.status)
-
-# 4. Check task result
-from celery.result import AsyncResult
-task = AsyncResult('task_id')
-print(task.status)
-print(task.result)
-
-# 5. Clear stuck tasks (last resort)
-celery -A config purge  # WARNING: Deletes all tasks!
+# Restart worker
+celery -A config worker --loglevel=info
 ```
 
-#### Issue: Admin interface returns 404
-
-**Error:**
-```
-Page not found (404)
-/admin/
-```
-
-**Solution:**
+### Odoo module upgrade fails
 ```bash
-# 1. Verify Django is running
-curl http://localhost:8000/
-
-# 2. Check URL configuration
-grep -n "admin/" django_portal/config/urls.py
-
-# 3. Verify admin app installed
-grep "django.contrib.admin" django_portal/config/settings/base.py
-
-# 4. Check migrations applied
-python django_portal/manage.py showmigrations admin
-
-# 5. Collect static files
-python django_portal/manage.py collectstatic --noinput
+# Upgrade from command line (safer than UI for debugging)
+source odoo_env/bin/activate
+python /home/nick/odoo-19/odoo-bin \
+    --config=odoo/odoo.conf \
+    -d berit_odoo \
+    -u berit_loan \
+    --stop-after-init
 ```
 
-### Debugging Tips
-
-#### View System Logs
+### Permission denied on startup script
 ```bash
-# Django logs
-tail -f django_portal/logs/django.log
-
-# Celery worker logs
-tail -f django_portal/logs/celery_worker.log
-
-# Celery beat logs
-tail -f django_portal/logs/celery_beat.log
-
-# Odoo logs
-tail -f odoo/logs/odoo.log
-```
-
-#### Run System Health Check
-```bash
-python django_portal/manage.py check
-python django_portal/manage.py showmigrations
-python django_portal/manage.py verify_sync_system
-```
-
-#### Test Database Connection
-```bash
-python django_portal/manage.py dbshell
-SELECT 1;
-```
-
-#### Test Odoo Connection
-```python
-python django_portal/manage.py shell
-
-from apps.loans.sync.perfect_sync import PerfectOdooSync
-
-sync = PerfectOdooSync()
-result = sync.test_connection()
-print(result)
-```
-
-#### Monitor Celery Tasks
-```bash
-# Active tasks
-celery -A config inspect active
-
-# Reserved tasks
-celery -A config inspect reserved
-
-# Task statistics
-celery -A config inspect stats
-
-# Event monitoring (real-time)
-celery -A config events
+chmod +x start_system_improved.sh start_system.sh
 ```
 
 ---
 
-## Monitoring & Maintenance
+## Contributing
 
-### Regular Tasks
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Make your changes following the existing code style
+4. Test thoroughly (including module upgrade in Odoo)
+5. Commit with a descriptive message: `git commit -m "feat: add loan top-up workflow"`
+6. Push and open a Pull Request against `master`
 
-#### Daily
-- Check sync event logs for failures
-- Review pending sync events
-- Monitor system performance
-
-#### Weekly
-- Review migration status report
-- Check database performance
-- Verify backups completed
-
-#### Monthly
-- Archive old sync events (>30 days)
-- Review sync statistics
-- Security audit logs
-- Performance analysis
-
-### Database Maintenance
-
-#### Backup Database
-```bash
-# Single backup
-pg_dump -U berit_user -d berit_portal > backup_$(date +%Y%m%d).sql
-
-# Or use backup script
-bash scripts/backup.sh
-```
-
-#### Restore Database
-```bash
-psql -U berit_user -d berit_portal < backup_20250310.sql
-```
-
-#### Check Database Size
-```bash
-psql -U berit_user -d berit_portal -c "
-SELECT 
-  schemaname,
-  tablename,
-  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
-FROM pg_tables
-WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
-ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
-"
-```
-
-#### Optimize Database
-```bash
-# Vacuum and analyze
-psql -U berit_user -d berit_portal -c "VACUUM ANALYZE;"
-
-# Or scheduled maintenance
-python django_portal/manage.py shell
-
-from django.db import connection
-connection.cursor().execute("VACUUM ANALYZE;")
-```
-
-### Performance Monitoring
-
-#### Check Slow Queries
-```bash
-# Enable query logging (development only)
-python django_portal/manage.py shell
-
-from django.db import connection
-from django.test.utils import CaptureQueriesContext
-
-with CaptureQueriesContext(connection) as context:
-    # Run some code
-    pass
-
-for query in context.captured_queries:
-    if query['time'] > 0.1:
-        print(f"Slow query ({query['time']}s):")
-        print(query['sql'])
-```
-
-#### Monitor Redis Memory
-```bash
-redis-cli INFO memory
-
-# Free up memory
-redis-cli FLUSHALL  # WARNING: Deletes all Redis data!
-redis-cli FLUSHDB   # WARNING: Deletes database 0 only!
-```
-
-#### Monitor Celery Queue
-```bash
-# Queue length
-celery -A config inspect active_queues
-
-# Task count
-celery -A config inspect registered
-
-# Worker status
-celery -A config inspect active
-```
-
-### Logging Configuration
-
-Logs are stored in `django_portal/logs/`:
-
-```
-logs/
-├── django.log              # Django application logs
-├── celery_worker.log       # Celery worker logs
-├── celery_beat.log         # Celery beat scheduler logs
-└── access.log              # HTTP access logs
-```
-
-#### View Logs
-```bash
-# Real-time logs
-tail -f logs/django.log
-
-# Last 100 lines
-tail -100 logs/django.log
-
-# Search for errors
-grep ERROR logs/django.log
-
-# Filter by date range
-grep "2025-03-10" logs/django.log
-```
-
-#### Log Rotation (Optional)
-```bash
-# Install logrotate
-sudo apt-get install logrotate
-
-# Create rotation config
-sudo vim /etc/logrotate.d/berit-shalvah
-
-# Configure rotation
-/var/www/berit-shalvah/django_portal/logs/*.log {
-    daily
-    missingok
-    rotate 30
-    compress
-    delaycompress
-    notifempty
-    create 0640 www-data www-data
-    sharedscripts
-}
-```
+### Code conventions
+- **Python:** PEP 8, 4-space indent, double quotes for strings
+- **Odoo models:** one file per model, `@api.depends` on all computed fields
+- **Django:** class-based views preferred, model methods for business logic
+- **Cron code fields:** single `model.method()` call only — no imports, no multi-line code
+- **Commits:** use conventional commits (`feat:`, `fix:`, `docs:`, `chore:`)
 
 ---
 
-## Support
+## License
 
-For technical support and questions:
-
-**Finance Officer**  
-Email: beritfinance@gmail.com  
-Phone: +254 (to be updated)  
-Office: Nairobi, Kenya
-
-**Development Support**  
-GitHub Issues: (to be updated)  
-Documentation: See README.md
-
-### Getting Help
-
-1. **First**, check the Troubleshooting section above
-2. **Then**, review logs in `django_portal/logs/`
-3. **Next**, check Django admin at `/admin/sync/syncevent/` for error details
-4. **Finally**, contact support with:
-   - Error message
-   - Logs (redacted of sensitive data)
-   - Steps to reproduce
-   - Environment details (OS, Python version, etc.)
-
-### Emergency Contacts
-
-For urgent production issues:
-1. Check system status dashboard
-2. Review recent logs for error patterns
-3. Attempt manual sync via Django shell
-4. Restart services if necessary (last resort)
-5. Contact support team
+This project is licensed under the **GNU Lesser General Public License v3 (LGPL-3)**.  
+See the [LICENSE](https://www.gnu.org/licenses/lgpl-3.0.html) for full terms.
 
 ---
 
-## License & Compliance
-
-**Security & Compliance**
-- Role-based access control in Odoo
-- Encrypted data transmission
-- KYC verification processes
-- CRB clearance integration
-- Collateral valuation requirements
-- Compliance with Kenyan financial regulations
-
-**Data Protection**
-- All personal data encrypted at rest
-- HTTPS enforced in production
-- Regular security audits
-- Automated backups
-- Disaster recovery procedures
-
----
-
-## Conclusion
-
-The Berit Shalvah Financial Services Loan Management System is a production-ready, fully integrated platform combining the power of Odoo and Django to deliver seamless loan processing and management.
-
-Key achievements:
-- ✅ Bulletproof bidirectional sync with 99.9% uptime SLA
-- ✅ Real-time data consistency across systems
-- ✅ Professional, responsive client UI
-- ✅ Complete audit trail and compliance
-- ✅ Scalable infrastructure with Docker
-- ✅ Comprehensive monitoring and logging
-
-**Status**: Production Ready ✅  
-**Last Updated**: March 10, 2025  
-**Version**: 1.0  
-
----
-
-**Integrity. Access. Growth.**
+**Berit Shalvah Financial Services Ltd**  
+📍 Kenya  
+🌐 https://beritshalvah.co.ke  
+📧 info@beritshalvah.co.ke

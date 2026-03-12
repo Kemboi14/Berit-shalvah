@@ -1,0 +1,90 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Application Received - {{ portal_settings.company_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #007bff; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f8f9fa; }
+        .application-details { background: white; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .next-steps { background: white; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ portal_settings.company_name }}</h1>
+            <h2>Loan Application Received!</h2>
+        </div>
+
+        <div class="content">
+            <p>Dear {{ user.full_name }},</p>
+
+            <p>Your loan application has been successfully submitted! We're excited to help you with your financial needs.</p>
+
+            <div class="application-details">
+                <h3>Application Details</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Reference Number:</strong></td>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;">{{ application.reference_number }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Loan Amount:</strong></td>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;">KES {{ application.loan_amount|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Duration:</strong></td>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;">{{ application.loan_duration }} months</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Monthly Repayment:</strong></td>
+                        <td style="padding: 8px 0; border-bottom: 1px solid #eee;">KES {{ application.monthly_repayment|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0;"><strong>Total Repayable:</strong></td>
+                        <td style="padding: 8px 0;">KES {{ application.total_repayable|floatformat:2 }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="next-steps">
+                <h3>What Happens Next?</h3>
+                <ol>
+                    <li>Your application will be reviewed by our team within 24-48 hours</li>
+                    <li>We'll contact you if we need any additional information</li>
+                    <li>You'll receive a final approval decision via email and SMS</li>
+                    <li>If approved, funds will be disbursed to your account</li>
+                </ol>
+            </div>
+
+            <p>You can track your application status by logging into your account:</p>
+            <p style="text-align: center; margin: 20px 0;">
+                <a href="{{ portal_settings.portal_base_url }}" class="btn">View Your Application</a>
+            </p>
+
+            <p>If you have any questions, please contact us:</p>
+            <ul>
+                <li><strong>Email:</strong> {{ portal_settings.company_email }}</li>
+                <li><strong>Phone:</strong> {{ portal_settings.company_phone }}</li>
+            </ul>
+
+            <p>Thank you for choosing {{ portal_settings.company_name }}!</p>
+
+            <p>Best regards,<br>
+            {{ portal_settings.company_name }} Team</p>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2024 {{ portal_settings.company_name }}. All rights reserved.</p>
+            <p>{{ portal_settings.company_address }}</p>
+        </div>
+    </div>
+</body>
+</html>

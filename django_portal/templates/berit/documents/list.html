@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}My Documents — Berit Shalvah{% endblock %}
+
+{% block content %}
+<div class="bs-content-with-sidebar">
+
+  <!-- Page Header -->
+  <div class="bs-page-header">
+    <div>
+      <h1><i class="fas fa-folder-open me-2 text-accent"></i>My Documents</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+          <li class="breadcrumb-item active">Documents</li>
+        </ol>
+      </nav>
+    </div>
+    <a href="{% url 'documents:upload' %}" class="btn btn-primary">
+      <i class="fas fa-upload me-2"></i>Upload Document
+    </a>
+  </div>
+
+  <div class="p-4">
+
+    <!-- Filter / Search Bar -->
+    <div class="card mb-4">
+      <div class="card-body py-3">
+        <form method="get" class="row g-3 align-items-end">
+          <div class="col-md-5">
+            <label class="form-label">Search</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" name="search" class="form-control"
+                     placeholder="Title, description or tags…"
+                     value="{{ search_query|default:'' }}">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select">
+              <option value="">All Categories</option>
+              {% for cat in categories %}
+              <option value="{{ cat.pk }}"
+                {% if selected_category == cat.pk|stringformat:"s" %}selected{% endif %}>
+                {{ cat.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="fas fa-filter me-1"></i>Filter
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if documents %}
+    <!-- Documents Grid -->
+    <div class="row g-4">
+      {% for doc in documents %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-start gap-3 mb-3">
+              <!-- File type icon -->
+              <div style="width:44px;height:44px;border-radius:var(--radius-md);
+                          background:var(--gray-100);display:flex;align-items:center;
+                          justify-content:center;font-size:1.3rem;flex-shrink:0;">
+                {% with ext=doc.filename|lower %}
+                  {% if ".pdf" in ext %}
+                    <i class="fas fa-file-pdf" style="color:#e53e3e;"></i>
+                  {% elif ".doc" in ext %}
+                    <i class="fas fa-file-word" style="color:#2b6cb0;"></i>
+                  {% elif ".xls" in ext %}
+                    <i class="fas fa-file-excel" style="color:#276749;"></i>
+                  {% elif ".jpg" in ext or ".jpeg" in ext or ".png" in ext %}
+                    <i class="fas fa-file-image" style="color:#d69e2e;"></i>
+                  {% else %}
+                    <i class="fas fa-file-alt" style="color:var(--gray-500);"></i>
+                  {% endif %}
+                {% endwith %}
+              </div>
+              <div class="flex-grow-1 overflow-hidden">
+                <h6 class="mb-1 fw-700"
+                    style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  {{ doc.title }}
+                </h6>
+                <div style="font-size:.8125rem;color:var(--gray-500);">
+                  {{ doc.get_file_size_mb }} MB
+                  {% if doc.category %}
+                  &nbsp;&middot;&nbsp;
+                  <span class="badge"
+                        style="background:var(--gray-100);color:var(--gray-600);">
+                    {{ doc.category.name }}
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            {% if doc.description %}
+            <p style="font-size:.875rem;color:var(--gray-600);margin-bottom:.75rem;">
+              {{ doc.description|truncatechars:80 }}
+            </p>
+            {% endif %}
+
+            {% if doc.get_tags_list %}
+            <div class="mb-3">
+              {% for tag in doc.get_tags_list %}
+              <span class="badge me-1"
+                    style="background:var(--bs-info-light);color:var(--bs-info);">
+                {{ tag }}
+              </span>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="font-size:.78rem;color:var(--gray-400);margin-bottom:.875rem;">
+              <i class="fas fa-clock me-1"></i>
+              Uploaded {{ doc.uploaded_at|date:"d M Y, H:i" }}
+            </div>
+
+            <!-- Actions -->
+            <div class="d-flex gap-2 flex-wrap">
+              <a href="{% url 'documents:download' doc.pk %}"
+                 class="btn btn-sm btn-primary">
+                <i class="fas fa-download me-1"></i>Download
+              </a>
+              <a href="{% url 'documents:edit' doc.pk %}"
+                 class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-pen me-1"></i>Edit
+              </a>
+              <a href="{% url 'documents:share' doc.pk %}"
+                 class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-share-alt me-1"></i>Share
+              </a>
+              <button type="button"
+                      class="btn btn-sm"
+                      style="background:var(--bs-danger-light);color:var(--bs-danger);border:none;"
+                      data-bs-toggle="modal"
+                      data-bs-target="#deleteModal{{ doc.pk }}">
+                <i class="fas fa-trash me-1"></i>Delete
+              </button>
+            </div>
+          </div>
+
+          {% if doc.is_public %}
+          <div class="card-footer d-flex align-items-center gap-2"
+               style="font-size:.8rem;color:var(--bs-success);">
+            <i class="fas fa-globe-africa"></i>
+            <span>Shared publicly</span>
+          </div>
+          {% elif doc.shared_with.exists %}
+          <div class="card-footer d-flex align-items-center gap-2"
+               style="font-size:.8rem;color:var(--bs-info);">
+            <i class="fas fa-user-friends"></i>
+            <span>Shared with {{ doc.shared_with.count }}
+              user{{ doc.shared_with.count|pluralize }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Delete confirmation modal -->
+        <div class="modal fade" id="deleteModal{{ doc.pk }}" tabindex="-1"
+             aria-hidden="true">
+          <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+              <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title">
+                  <i class="fas fa-exclamation-triangle text-warning me-2"></i>Delete Document
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body pt-2">
+                <p style="font-size:.9rem;color:var(--gray-600);">
+                  Are you sure you want to permanently delete
+                  <strong>{{ doc.title }}</strong>? This cannot be undone.
+                </p>
+              </div>
+              <div class="modal-footer border-0 pt-0 gap-2">
+                <button type="button" class="btn btn-sm btn-outline-primary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'documents:delete' doc.pk %}"
+                      style="margin:0;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash me-1"></i>Delete
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="card">
+      <div class="card-body">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-folder-open"></i>
+          </div>
+          <h5>No documents yet</h5>
+          <p>
+            {% if search_query or selected_category %}
+              No documents match your current filters.
+            {% else %}
+              You haven't uploaded any documents yet.
+            {% endif %}
+          </p>
+          {% if search_query or selected_category %}
+          <a href="{% url 'documents:list' %}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-times me-1"></i>Clear Filters
+          </a>
+          {% endif %}
+          <a href="{% url 'documents:upload' %}" class="btn btn-primary">
+            <i class="fas fa-upload me-1"></i>Upload Document
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /p-4 -->
+</div>
+{% endblock %}

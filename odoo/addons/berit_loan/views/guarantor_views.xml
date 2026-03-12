@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Guarantor Form View -->
+    <record id="view_berit_guarantor_form" model="ir.ui.view">
+        <field name="name">berit.guarantor.form</field>
+        <field name="model">berit.guarantor</field>
+        <field name="arch" type="xml">
+            <form string="Guarantor">
+                <header>
+                    <button
+                        name="action_verify"
+                        string="Verify"
+                        type="object"
+                        invisible="is_verified != False"
+                        class="btn-success"
+                        groups="berit_loan.berit_loan_officer"
+                    />
+                    <button
+                        name="action_unverify"
+                        string="Unverify"
+                        type="object"
+                        invisible="is_verified != True"
+                        class="btn-warning"
+                        groups="berit_loan.berit_loan_officer"
+                    />
+                    <field name="is_verified" widget="boolean_toggle" />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="loan_id" readonly="1" />
+                            <field name="partner_id" />
+                            <field name="name" />
+                            <field name="id_number" />
+                            <field name="phone" />
+                            <field name="email" />
+                        </group>
+                        <group>
+                            <field name="relationship_to_applicant" />
+                            <field name="occupation" />
+                            <field name="monthly_income" />
+                            <field name="years_known" />
+                            <field name="is_verified" />
+                            <field name="verified_by" readonly="1" />
+                            <field name="verified_date" readonly="1" />
+                        </group>
+                    </group>
+                    <group string="Employment/Business Address">
+                        <field name="employer_address" nolabel="1" />
+                    </group>
+                    <group string="Documents">
+                        <group>
+                            <field
+                                name="guarantee_letter"
+                                filename="guarantee_letter_name"
+                            />
+                            <field name="guarantee_letter_name" />
+                        </group>
+                        <group>
+                            <field
+                                name="bank_statement"
+                                filename="bank_statement_name"
+                            />
+                            <field name="bank_statement_name" />
+                        </group>
+                        <group>
+                            <field name="id_copy" filename="id_copy_name" />
+                            <field name="id_copy_name" />
+                        </group>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1" />
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" />
+                    <field name="activity_ids" />
+                    <field name="message_ids" />
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Guarantor List View -->
+    <record id="view_berit_guarantor_tree" model="ir.ui.view">
+        <field name="name">berit.guarantor.tree</field>
+        <field name="model">berit.guarantor</field>
+        <field name="arch" type="xml">
+            <list string="Guarantors" decoration-success="is_verified">
+                <field name="loan_id" />
+                <field name="name" />
+                <field name="phone" />
+                <field name="email" />
+                <field name="relationship_to_applicant" />
+                <field name="monthly_income" />
+                <field name="is_verified" />
+                <field name="verified_by" />
+            </list>
+        </field>
+    </record>
+
+    <!-- Guarantor Search View -->
+    <record id="view_berit_guarantor_search" model="ir.ui.view">
+        <field name="name">berit.guarantor.search</field>
+        <field name="model">berit.guarantor</field>
+        <field name="arch" type="xml">
+            <search string="Guarantors">
+                <field name="loan_id" />
+                <field name="name" />
+                <field name="phone" />
+                <field name="email" />
+                <filter
+                    string="Verified"
+                    name="verified"
+                    domain="[('is_verified', '=', True)]"
+                />
+                <filter
+                    string="Pending Verification"
+                    name="pending"
+                    domain="[('is_verified', '=', False)]"
+                />
+                <filter
+                    string="Group by Loan"
+                    name="group_by_loan"
+                    context="{'group_by': 'loan_id'}"
+                />
+                <filter
+                    string="Group by Verification Status"
+                    name="group_by_verified"
+                    context="{'group_by': 'is_verified'}"
+                />
+            </search>
+        </field>
+    </record>
+
+    <!-- Guarantor Action -->
+    <record id="action_berit_guarantor" model="ir.actions.act_window">
+        <field name="name">Guarantors</field>
+        <field name="res_model">berit.guarantor</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_berit_guarantor_tree" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No guarantors found
+            </p>
+            <p>
+                Guarantors provide additional security for loan applications and must be verified.
+            </p>
+        </field>
+    </record>
+
+    <!-- Pending Verification Guarantors Action -->
+    <record id="action_berit_guarantor_pending" model="ir.actions.act_window">
+        <field name="name">Guarantors Pending Verification</field>
+        <field name="res_model">berit.guarantor</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_verified', '=', False)]</field>
+    </record>
+</odoo>

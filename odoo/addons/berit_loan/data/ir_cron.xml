@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Daily: Mark overdue repayments -->
+    <record id="ir_cron_mark_overdue_repayments" model="ir.cron">
+        <field name="name">Mark Overdue Repayments</field>
+        <field name="model_id" ref="model_berit_repayment_schedule" />
+        <field name="state">code</field>
+        <field name="code">model.mark_overdue_payments()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+        <field name="priority">5</field>
+    </record>
+
+    <!-- Daily: Check document expiry -->
+    <record id="ir_cron_check_document_expiry" model="ir.cron">
+        <field name="name">Check Document Expiry</field>
+        <field name="model_id" ref="model_berit_loan_document" />
+        <field name="state">code</field>
+        <field name="code">model.check_all_documents_expiry()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+        <field name="priority">10</field>
+    </record>
+
+    <!-- Daily: Send repayment reminders (7 days before due) -->
+    <!--
+        send_reminder_email() is defined on berit.repayment.schedule as a
+        record-set method.  The cron searches for schedules due within the
+        next 7 days and calls it on the resulting recordset.
+    -->
+    <record id="ir_cron_send_repayment_reminders" model="ir.cron">
+        <field name="name">Send Repayment Reminders</field>
+        <field name="model_id" ref="model_berit_repayment_schedule" />
+        <field name="state">code</field>
+        <field name="code">model.send_due_soon_reminders()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+        <field name="priority">15</field>
+    </record>
+
+    <!-- Weekly: Loan portfolio summary                                        -->
+    <!-- Disabled until send_portfolio_summary() is implemented on             -->
+    <!-- berit.loan.application.  Set active=True once the method exists.      -->
+    <record id="ir_cron_portfolio_summary" model="ir.cron">
+        <field name="name">Weekly Portfolio Summary</field>
+        <field name="model_id" ref="model_berit_loan_application" />
+        <field name="state">code</field>
+        <field name="code">model.send_portfolio_summary()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">weeks</field>
+        <field name="active">False</field>
+        <field name="priority">20</field>
+    </record>
+</odoo>

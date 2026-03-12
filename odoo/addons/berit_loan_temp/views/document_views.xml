@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Document Form View -->
+    <record id="view_berit_loan_document_form" model="ir.ui.view">
+        <field name="name">berit.loan.document.form</field>
+        <field name="model">berit.loan.document</field>
+        <field name="arch" type="xml">
+            <form string="Loan Document">
+                <header>
+                    <button name="action_verify" string="Verify" type="object" states="unverified" class="btn-success" groups="berit_loan.berit_loan_officer"/>
+                    <button name="action_unverify" string="Unverify" type="object" states="verified" class="btn-warning" groups="berit_loan.berit_loan_officer"/>
+                    <button name="action_download" string="Download" type="object" class="btn-primary"/>
+                    <field name="verified" widget="boolean_toggle"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="loan_id" readonly="1"/>
+                            <field name="document_type"/>
+                            <field name="file" filename="filename"/>
+                            <field name="filename"/>
+                            <field name="upload_date"/>
+                        </group>
+                        <group>
+                            <field name="expiry_date"/>
+                            <field name="is_required"/>
+                            <field name="verified"/>
+                            <field name="verified_by" readonly="1"/>
+                            <field name="verified_date" readonly="1"/>
+                            <field name="file_size" readonly="1"/>
+                            <field name="mime_type" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Document List View -->
+    <record id="view_berit_loan_document_tree" model="ir.ui.view">
+        <field name="name">berit.loan.document.tree</field>
+        <field name="model">berit.loan.document</field>
+        <field name="arch" type="xml">
+            <tree string="Documents" decoration-success="verified" decoration-warning="expiry_date and expiry_date &lt; context_today()">
+                <field name="loan_id"/>
+                <field name="document_type"/>
+                <field name="filename"/>
+                <field name="upload_date"/>
+                <field name="verified"/>
+                <field name="verified_by"/>
+                <field name="file_size"/>
+                <field name="expiry_date"/>
+                <button name="action_download" string="Download" type="object" icon="fa-download"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Document Search View -->
+    <record id="view_berit_loan_document_search" model="ir.ui.view">
+        <field name="name">berit.loan.document.search</field>
+        <field name="model">berit.loan.document</field>
+        <field name="arch" type="xml">
+            <search string="Documents">
+                <field name="loan_id"/>
+                <field name="filename"/>
+                <field name="document_type"/>
+                <filter string="Verified" name="verified" domain="[('verified', '=', True)]"/>
+                <filter string="Not Verified" name="not_verified" domain="[('verified', '=', False)]"/>
+                <filter string="Required" name="required" domain="[('is_required', '=', True)]"/>
+                <filter string="Optional" name="optional" domain="[('is_required', '=', False)]"/>
+                <separator/>
+                <filter string="ID/Passport" name="id" domain="[('document_type', '=', 'id')]"/>
+                <filter string="KRA PIN" name="kra_pin" domain="[('document_type', '=', 'kra_pin')]"/>
+                <filter string="CRB Clearance" name="crb" domain="[('document_type', '=', 'crb')]"/>
+                <filter string="Payslip" name="payslip" domain="[('document_type', '=', 'payslip')]"/>
+                <filter string="Bank Statement" name="bank_statement" domain="[('document_type', '=', 'bank_statement')]"/>
+                <filter string="M-Pesa Statement" name="mpesa_statement" domain="[('document_type', '=', 'mpesa_statement')]"/>
+                <filter string="Guarantor Letter" name="guarantor_letter" domain="[('document_type', '=', 'guarantor_letter')]"/>
+                <filter string="Collateral Proof" name="collateral_proof" domain="[('document_type', '=', 'collateral_proof')]"/>
+                <filter string="Valuation Report" name="valuation_report" domain="[('document_type', '=', 'valuation_report')]"/>
+                <filter string="Other" name="other" domain="[('document_type', '=', 'other')]"/>
+                <separator/>
+                <filter string="Expired" name="expired" domain="[('expiry_date', '!=', False), ('expiry_date', '&lt;', context_today())]"/>
+                <filter string="Expiring Soon" name="expiring_soon" domain="[('expiry_date', '!=', False), ('expiry_date', '&gt;=', context_today()), ('expiry_date', '&lt;=', (context_today() + relativedelta(days=30)).strftime('%Y-%m-%d'))]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Document Type" name="group_type" context="{'group_by': 'document_type'}"/>
+                    <filter string="Loan" name="group_loan" context="{'group_by': 'loan_id'}"/>
+                    <filter string="Verification Status" name="group_verified" context="{'group_by': 'verified'}"/>
+                    <filter string="Upload Date" name="group_upload_date" context="{'group_by': 'upload_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Document Action -->
+    <record id="action_berit_loan_document" model="ir.actions.act_window">
+        <field name="name">Documents</field>
+        <field name="res_model">berit.loan.document</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_berit_loan_document_tree"/>
+        <field name="search_view_id" ref="view_berit_loan_document_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No documents found
+            </p>
+            <p>
+                Upload and manage loan documents including KYC, CRB clearance, and collateral documents.
+            </p>
+        </field>
+    </record>
+
+    <!-- Pending Verification Documents Action -->
+    <record id="action_berit_loan_document_pending" model="ir.actions.act_window">
+        <field name="name">Documents Pending Verification</field>
+        <field name="res_model">berit.loan.document</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('verified', '=', False)]</field>
+        <field name="context">{'search_default_required': 1}</field>
+    </record>
+
+    <!-- Expired Documents Action -->
+    <record id="action_berit_loan_document_expired" model="ir.actions.act_window">
+        <field name="name">Expired Documents</field>
+        <field name="res_model">berit.loan.document</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('expiry_date', '!=', False), ('expiry_date', '&lt;', context_today())]</field>
+    </record>
+</odoo>

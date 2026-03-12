@@ -1,0 +1,710 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Profile — Berit Shalvah{% endblock %}
+{% block nav_profile %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dash-layout {
+        display: flex;
+        min-height: calc(100vh - 64px);
+    }
+    .dash-content {
+        flex: 1;
+        margin-left: 260px;
+        background: var(--gray-50);
+        min-height: calc(100vh - 64px);
+        display: flex;
+        flex-direction: column;
+    }
+    .dash-inner {
+        padding: 2rem;
+        flex: 1;
+    }
+
+    /* ── Page header ── */
+    .bs-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .bs-page-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin: 0;
+        letter-spacing: -.02em;
+    }
+    .bs-page-header .breadcrumb {
+        font-size: .8rem;
+        margin: .25rem 0 0;
+        padding: 0;
+        background: none;
+        display: flex;
+        gap: .4rem;
+        align-items: center;
+        list-style: none;
+    }
+    .bs-page-header .breadcrumb-item a { color: var(--bs-primary); text-decoration: none; }
+    .bs-page-header .breadcrumb-item a:hover { text-decoration: underline; }
+    .bs-page-header .breadcrumb-item.active { color: var(--gray-500); }
+    .bs-page-header .breadcrumb-item + .breadcrumb-item::before {
+        content: '/';
+        color: var(--gray-300);
+    }
+
+    /* ── Form card ── */
+    .form-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .form-card-header {
+        padding: 1.125rem 1.5rem;
+        border-bottom: 1px solid var(--gray-100);
+        display: flex;
+        align-items: center;
+        gap: .625rem;
+    }
+    .form-card-header .fch-icon {
+        width: 32px; height: 32px;
+        border-radius: var(--radius-base);
+        display: flex; align-items: center; justify-content: center;
+        font-size: .8rem;
+        background: rgba(var(--bs-primary-rgb), .1);
+        color: var(--bs-primary);
+        flex-shrink: 0;
+    }
+    .form-card-header h5 {
+        font-size: .9375rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+    .form-card-body {
+        padding: 1.5rem;
+    }
+
+    /* ── Form groups ── */
+    .form-section-label {
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--gray-400);
+        margin-bottom: 1rem;
+        padding-bottom: .5rem;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    .form-row-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .form-row-grid.three-col {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    .form-row-grid.full {
+        grid-template-columns: 1fr;
+    }
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: .375rem;
+    }
+    .form-field label {
+        font-size: .8rem;
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+    .form-field label .req {
+        color: #e53e3e;
+        margin-left: .15rem;
+    }
+    .form-field .form-control,
+    .form-field .form-select {
+        border-radius: var(--radius-base);
+        border: 1.5px solid var(--gray-200);
+        padding: .55rem .875rem;
+        font-size: .875rem;
+        color: var(--gray-900);
+        transition: border-color .15s, box-shadow .15s;
+        background: #fff;
+    }
+    .form-field .form-control:focus,
+    .form-field .form-select:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), .12);
+        outline: none;
+    }
+    .form-field .form-control:disabled,
+    .form-field .form-select:disabled {
+        background: var(--gray-50);
+        color: var(--gray-400);
+        cursor: not-allowed;
+    }
+    .form-field .hint {
+        font-size: .75rem;
+        color: var(--gray-400);
+    }
+
+    /* ── Avatar upload ── */
+    .avatar-upload-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-200);
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    .avatar-circle-lg {
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-light) 100%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #fff;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 14px rgba(10,36,99,.18);
+    }
+    .avatar-upload-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border: 1.5px solid var(--gray-200);
+        border-radius: var(--radius-base);
+        padding: .45rem 1rem;
+        font-size: .8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--trans-base);
+        margin-top: .25rem;
+    }
+    .avatar-upload-btn:hover {
+        background: var(--gray-200);
+    }
+    #avatarInput { display: none; }
+
+    /* ── Help cards ── */
+    .help-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-200);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .help-card h6 {
+        font-size: .8rem;
+        font-weight: 700;
+        color: var(--gray-700);
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        margin-bottom: .75rem;
+    }
+    .help-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+    .help-list li {
+        font-size: .8rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: flex-start;
+        gap: .5rem;
+    }
+    .help-list li::before {
+        content: '';
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        margin-top: .45rem;
+        flex-shrink: 0;
+    }
+
+    /* ── Form actions bar ── */
+    .form-actions {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--gray-100);
+        margin-top: 1.25rem;
+    }
+
+    /* ── Section divider ── */
+    .section-divider {
+        border: none;
+        border-top: 1px solid var(--gray-100);
+        margin: 1.375rem 0 1.25rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .dash-content { margin-left: 0; }
+        .dash-inner   { padding: 1.25rem; }
+        .form-row-grid { grid-template-columns: 1fr; }
+        .form-row-grid.three-col { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 575.98px) {
+        .form-row-grid.three-col { grid-template-columns: 1fr; }
+        .form-actions { flex-direction: column; align-items: stretch; }
+    }
+</style>
+{% endblock %}
+
+{% block full_content %}
+<div class="dash-layout">
+
+    <!-- ══════ SIDEBAR ══════ -->
+    <aside class="bs-sidebar" id="bsSidebar">
+        <div class="sidebar-user">
+            <div class="avatar">
+                {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+            </div>
+            <div style="min-width:0;">
+                <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                <div class="user-role">Client Account</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section-title">Main</div>
+        <nav>
+            <a href="{% url 'dashboard:home' %}" class="nav-link">
+                <i class="fas fa-th-large"></i>Dashboard
+            </a>
+            <a href="{% url 'loans:modern_application' %}" class="nav-link">
+                <i class="fas fa-plus-circle"></i>Apply for Loan
+            </a>
+            <a href="{% url 'loans:application_list' %}" class="nav-link">
+                <i class="fas fa-file-contract"></i>My Loans
+            </a>
+        </nav>
+
+        <div class="sidebar-section-title">Account</div>
+        <nav>
+            <a href="{% url 'accounts:profile' %}" class="nav-link active">
+                <i class="fas fa-user"></i>My Profile
+            </a>
+            <a href="{% url 'accounts:documents' %}" class="nav-link">
+                <i class="fas fa-folder"></i>My Documents
+            </a>
+            <a href="{% url 'accounts:settings' %}" class="nav-link">
+                <i class="fas fa-cog"></i>Settings
+            </a>
+        </nav>
+
+        {% if request.user.is_staff %}
+        <div class="sidebar-section-title">Administration</div>
+        <nav>
+            <a href="{% url 'dashboard:staff' %}" class="nav-link">
+                <i class="fas fa-users-cog"></i>Staff Dashboard
+            </a>
+            <a href="{% url 'admin:index' %}" class="nav-link">
+                <i class="fas fa-tools"></i>Django Admin
+            </a>
+        </nav>
+        {% endif %}
+
+        <hr>
+        <nav>
+            <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="nav-link" style="color:rgba(255,100,100,.7);background:none;border:none;width:100%;text-align:left;cursor:pointer;padding:0;"><i class="fas fa-sign-out-alt"></i>Sign Out</button></form>
+        </nav>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- ══════ MAIN CONTENT ══════ -->
+    <div class="dash-content">
+
+        <!-- Mobile top bar -->
+        <div class="d-lg-none d-flex align-items-center justify-content-between px-3 py-2"
+             style="background:#fff;border-bottom:1px solid var(--gray-200);">
+            <button onclick="openSidebar()" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span style="font-weight:700;font-size:.9rem;color:var(--gray-900);">Edit Profile</span>
+            <a href="{% url 'accounts:profile' %}" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
+
+        <div class="dash-inner">
+
+            <!-- Page Header -->
+            <div class="bs-page-header">
+                <div>
+                    <h1><i class="fas fa-user-edit me-2" style="color:var(--bs-primary);font-size:1.2rem;"></i>Edit Profile</h1>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'accounts:profile' %}">Profile</a></li>
+                        <li class="breadcrumb-item active">Edit</li>
+                    </ol>
+                </div>
+                <a href="{% url 'accounts:profile' %}" class="btn d-none d-lg-inline-flex"
+                   style="background:var(--gray-100);color:var(--gray-700);border-radius:var(--radius-base);gap:.4rem;align-items:center;font-size:.875rem;">
+                    <i class="fas fa-arrow-left"></i> Back to Profile
+                </a>
+            </div>
+
+            <div class="row g-4">
+
+                <!-- ── LEFT: Avatar + Tips ── -->
+                <div class="col-lg-4 col-xl-3">
+
+                    <!-- Avatar card -->
+                    <div class="avatar-upload-card">
+                        <div class="avatar-circle-lg" id="avatarPreview">
+                            {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                        </div>
+                        <div style="font-size:.85rem;font-weight:700;color:var(--gray-800);margin-bottom:.2rem;">
+                            {{ user.get_full_name|default:user.username }}
+                        </div>
+                        <div style="font-size:.75rem;color:var(--gray-500);margin-bottom:1rem;">
+                            {{ user.email }}
+                        </div>
+                        <input type="file" id="avatarInput" accept="image/*" onchange="previewAvatar(event)">
+                        <label for="avatarInput" class="avatar-upload-btn">
+                            <i class="fas fa-camera"></i> Change Photo
+                        </label>
+                        <div style="font-size:.7rem;color:var(--gray-400);margin-top:.625rem;">
+                            JPG, PNG — max 2 MB
+                        </div>
+                    </div>
+
+                    <!-- Profile tips -->
+                    <div class="help-card">
+                        <h6><i class="fas fa-lightbulb me-1" style="color:var(--bs-accent);"></i>Tips</h6>
+                        <ul class="help-list">
+                            <li>Keep your National ID and KRA PIN up to date for faster verification</li>
+                            <li>A complete profile speeds up loan approvals</li>
+                            <li>Your phone number is used for M-Pesa payments</li>
+                            <li>Income information determines your loan limit</li>
+                            <li>Banking details are required for disbursement</li>
+                        </ul>
+                    </div>
+
+                    <!-- Required documents reminder -->
+                    <div class="help-card" style="border-left:3px solid var(--bs-primary);">
+                        <h6><i class="fas fa-folder me-1" style="color:var(--bs-primary);"></i>Supporting Documents</h6>
+                        <ul class="help-list">
+                            <li>National ID (front & back)</li>
+                            <li>KRA PIN certificate</li>
+                            <li>Recent passport photo</li>
+                            <li>Latest payslip or bank statement</li>
+                        </ul>
+                        <a href="{% url 'accounts:documents' %}"
+                           style="font-size:.78rem;color:var(--bs-primary);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;margin-top:.625rem;">
+                            <i class="fas fa-upload fa-xs"></i> Upload Documents
+                        </a>
+                    </div>
+
+                </div>
+
+                <!-- ── RIGHT: Edit forms ── -->
+                <div class="col-lg-8 col-xl-9">
+
+                    <form method="POST" enctype="multipart/form-data" id="profileForm" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="avatar_file" id="avatarFileInput">
+
+                        <!-- Personal Information -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="fch-icon"><i class="fas fa-id-card"></i></div>
+                                <h5>Personal Information</h5>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="form-row-grid">
+                                    <div class="form-field">
+                                        <label for="firstName">First Name <span class="req">*</span></label>
+                                        <input type="text" class="form-control" id="firstName" name="first_name"
+                                               value="{{ user.first_name }}" required>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="lastName">Last Name <span class="req">*</span></label>
+                                        <input type="text" class="form-control" id="lastName" name="last_name"
+                                               value="{{ user.last_name }}" required>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="email">Email Address <span class="req">*</span></label>
+                                        <input type="email" class="form-control" id="email" name="email"
+                                               value="{{ user.email }}" required>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="phone">Phone Number</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone"
+                                               value="{{ user.phone }}" placeholder="+254 7XX XXX XX""X">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="nationalId">National ID</label>
+                                        <input type="text" class="form-control" id="nationalId" name="national_id"
+                                               value="{{ user.national_id }}" placeholder="8-digit ID number">
+                                        <span class="hint">Required for loan processing</span>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="kraPin">KRA PIN</label>
+                                        <input type="text" class="form-control" id="kraPin" name="kra_pin"
+                                               value="{{ user.kra_pin }}" placeholder="A000000000X">
+                                        <span class="hint">Kenya Revenue Authority PIN</span>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="dateOfBirth">Date of Birth</label>
+                                        <input type="date" class="form-control" id="dateOfBirth" name="date_of_birth"
+                                               value="{{ user.date_of_birth|date:'Y-m-d' }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employment & Financial Information -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="fch-icon" style="background:rgba(13,148,136,.1);color:#0d9488;">
+                                    <i class="fas fa-briefcase"></i>
+                                </div>
+                                <h5>Employment & Financial Information</h5>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="form-row-grid">
+                                    <div class="form-field">
+                                        <label for="employmentStatus">Employment Status</label>
+                                        <select class="form-select" id="employmentStatus" name="employment_status">
+                                            <option value="">— Select status —</option>
+                                            <option value="employed" {% if user.client_profile.employment_status == 'employed' %}selected{% endif %}>Employed</option>
+                                            <option value="self_employed" {% if user.client_profile.employment_status == 'self_employed' %}selected{% endif %}>Self-Employed</option>
+                                            <option value="business_owner" {% if user.client_profile.employment_status == 'business_owner' %}selected{% endif %}>Business Owner</option>
+                                            <option value="student" {% if user.client_profile.employment_status == 'student' %}selected{% endif %}>Student</option>
+                                            <option value="retired" {% if user.client_profile.employment_status == 'retired' %}selected{% endif %}>Retired</option>
+                                            <option value="unemployed" {% if user.client_profile.employment_status == 'unemployed' %}selected{% endif %}>Unemployed</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="monthlyIncome">Monthly Income (KES)</label>
+                                        <input type="number" class="form-control" id="monthlyIncome" name="monthly_income"
+                                               value="{{ user.client_profile.monthly_income }}" min="0" placeholder="e.g. 50000">
+                                        <span class="hint">Gross monthly income before deductions</span>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="employerName">Employer / Business Name</label>
+                                        <input type="text" class="form-control" id="employerName" name="employer_name"
+                                               value="{{ user.client_profile.employer_name }}">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="mpesaPhone">M-Pesa Phone Number</label>
+                                        <input type="tel" class="form-control" id="mpesaPhone" name="mpesa_phone"
+                                               value="{{ user.client_profile.mpesa_phone }}" placeholder="+254 7XX XXX XXX">
+                                        <span class="hint">Used for M-Pesa disbursements</span>
+                                    </div>
+                                </div>
+
+                                <hr class="section-divider">
+                                <div class="form-section-label">Banking Information</div>
+
+                                <div class="form-row-grid three-col">
+                                    <div class="form-field">
+                                        <label for="bankName">Bank Name</label>
+                                        <input type="text" class="form-control" id="bankName" name="bank_name"
+                                               value="{{ user.client_profile.bank_name }}">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="bankAccount">Account Number</label>
+                                        <input type="text" class="form-control" id="bankAccount" name="bank_account_number"
+                                               value="{{ user.client_profile.bank_account_number }}">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="bankBranch">Branch</label>
+                                        <input type="text" class="form-control" id="bankBranch" name="bank_branch"
+                                               value="{{ user.client_profile.bank_branch }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Address Information -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="fch-icon" style="background:rgba(245,166,35,.1);color:var(--bs-accent);">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <h5>Address Information</h5>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="form-row-grid full">
+                                    <div class="form-field">
+                                        <label for="residentialAddress">Residential Address</label>
+                                        <textarea class="form-control" id="residentialAddress" name="residential_address"
+                                                  rows="2" placeholder="Street, Estate, Area">{{ user.client_profile.residential_address }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="form-row-grid three-col">
+                                    <div class="form-field">
+                                        <label for="city">City / Town</label>
+                                        <input type="text" class="form-control" id="city" name="city"
+                                               value="{{ user.client_profile.city }}">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="county">County</label>
+                                        <input type="text" class="form-control" id="county" name="county"
+                                               value="{{ user.client_profile.county }}">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="postalAddress">Postal Address</label>
+                                        <input type="text" class="form-control" id="postalAddress" name="postal_address"
+                                               value="{{ user.client_profile.postal_address }}" placeholder="P.O. Box XXXXX">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form actions -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="saveBtn">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                            <a href="{% url 'accounts:profile' %}" class="btn"
+                               style="background:var(--gray-100);color:var(--gray-700);border-radius:var(--radius-base);">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div><!-- /dash-inner -->
+    </div><!-- /dash-content -->
+</div><!-- /dash-layout -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openSidebar() {
+    document.getElementById('bsSidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('show');
+}
+function closeSidebar() {
+    document.getElementById('bsSidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+function previewAvatar(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('avatarPreview');
+        preview.style.backgroundImage = `url(${e.target.result})`;
+        preview.style.backgroundSize = 'cover';
+        preview.style.backgroundPosition = 'center';
+        preview.textContent = '';
+    };
+    reader.readAsDataURL(file);
+}
+
+document.getElementById('profileForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('saveBtn');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving…';
+
+    const formData = new FormData(this);
+
+    // Attach avatar file if selected
+    const avatarFile = document.getElementById('avatarInput').files[0];
+    if (avatarFile) {
+        formData.set('avatar', avatarFile);
+    }
+
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show a brief success flash then redirect
+            btn.innerHTML = '<i class="fas fa-check me-2"></i>Saved!';
+            btn.style.background = '#10b981';
+            btn.style.borderColor = '#10b981';
+            setTimeout(() => {
+                window.location.href = "{% url 'accounts:profile' %}";
+            }, 800);
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            const msg = data.message || 'Failed to save changes. Please try again.';
+            showFormError(msg, data.errors || {});
+        }
+    })
+    .catch(() => {
+        // Fallback: submit normally if AJAX fails
+        this.submit();
+    });
+});
+
+function showFormError(message, errors) {
+    // Remove any existing error banners
+    const existing = document.querySelector('.form-error-banner');
+    if (existing) existing.remove();
+
+    // Highlight individual fields
+    Object.entries(errors).forEach(([field, msgs]) => {
+        const input = document.querySelector(`[name="${field}"]`);
+        if (input) {
+            input.style.borderColor = '#e53e3e';
+            input.title = Array.isArray(msgs) ? msgs.join(', ') : msgs;
+        }
+    });
+
+    // Show top-level error
+    const banner = document.createElement('div');
+    banner.className = 'form-error-banner';
+    banner.style.cssText = `
+        background: #fef2f2;
+        border: 1.5px solid #fecaca;
+        border-radius: var(--radius-base);
+        color: #dc2626;
+        padding: .75rem 1rem;
+        font-size: .875rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: .625rem;
+    `;
+    banner.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+
+    const form = document.getElementById('profileForm');
+    form.insertBefore(banner, form.firstChild);
+    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Clear field error highlight on change
+document.querySelectorAll('.form-control, .form-select').forEach(input => {
+    input.addEventListener('input', function() {
+        this.style.borderColor = '';
+        this.title = '';
+    });
+});
+</script>
+{% endblock %}

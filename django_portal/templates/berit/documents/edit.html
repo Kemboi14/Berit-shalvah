@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Document — Berit Shalvah{% endblock %}
+
+{% block content %}
+<div class="bs-content-with-sidebar">
+
+  <!-- Page Header -->
+  <div class="bs-page-header">
+    <div>
+      <h1><i class="fas fa-pen me-2 text-accent"></i>Edit Document</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'documents:list' %}">Documents</a></li>
+          <li class="breadcrumb-item active">Edit</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="p-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-edit me-2"></i>Edit: {{ object.title }}
+          </div>
+          <div class="card-body">
+            <form method="post" enctype="multipart/form-data" novalidate>
+              {% csrf_token %}
+
+              {% for field in form %}
+              <div class="mb-3">
+                <label class="form-label" for="{{ field.id_for_label }}">
+                  {{ field.label }}
+                  {% if field.field.required %}<span class="text-danger ms-1">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+                {% for error in field.errors %}
+                <div class="invalid-feedback d-block">{{ error }}</div>
+                {% endfor %}
+              </div>
+              {% endfor %}
+
+              <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+                <a href="{% url 'documents:list' %}" class="btn btn-outline-primary">
+                  <i class="fas fa-times me-2"></i>Cancel
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="card mt-4" style="border-color:var(--bs-danger)!important;">
+          <div class="card-header neutral">
+            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+            <span style="color:var(--bs-danger);font-weight:700;">Danger Zone</span>
+          </div>
+          <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+              <div style="font-weight:600;color:var(--gray-800);">Delete this document</div>
+              <div style="font-size:.875rem;color:var(--gray-500);">
+                Once deleted, the file cannot be recovered.
+              </div>
+            </div>
+            <button type="button"
+                    class="btn btn-sm"
+                    style="background:var(--bs-danger-light);color:var(--bs-danger);border:1px solid var(--bs-danger);"
+                    data-bs-toggle="modal"
+                    data-bs-target="#confirmDeleteModal">
+              <i class="fas fa-trash me-1"></i>Delete Document
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle text-warning me-2"></i>Confirm Delete
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <p style="font-size:.9rem;color:var(--gray-600);">
+          Are you sure you want to permanently delete
+          <strong>{{ object.title }}</strong>? This cannot be undone.
+        </p>
+      </div>
+      <div class="modal-footer border-0 pt-0 gap-2">
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                data-bs-dismiss="modal">Cancel</button>
+        <form method="post" action="{% url 'documents:delete' object.pk %}" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger">
+            <i class="fas fa-trash me-1"></i>Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

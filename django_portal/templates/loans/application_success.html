@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Application Success - Berit Shalvah Financial Services{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle fa-5x text-success"></i>
+                    </div>
+                    
+                    <h2 class="mb-3">Application Submitted Successfully!</h2>
+                    
+                    <p class="lead mb-4">
+                        Thank you for applying with Berit Shalvah Financial Services. Your loan application has been received and is currently under review.
+                    </p>
+                    
+                    <div class="alert alert-info text-start">
+                        <h5><i class="fas fa-info-circle me-2"></i>What happens next?</h5>
+                        <ol>
+                            <li>Our team will review your application within 24 hours</li>
+                            <li>You will receive an email with the application status</li>
+                            <li>If approved, you'll receive a loan offer via email and SMS</li>
+                            <li>You can accept the offer online or visit our branch</li>
+                            <li>Once accepted, funds will be disbursed within 24 hours</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <i class="fas fa-phone fa-2x text-primary mb-2"></i>
+                                    <h6>Contact Support</h6>
+                                    <p class="small mb-0">Call us for any questions</p>
+                                    <p class="small mb-0"><strong>+254-XXX-XXX-XXX</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <i class="fas fa-envelope fa-2x text-success mb-2"></i>
+                                    <h6>Email Support</h6>
+                                    <p class="small mb-0">Send us your questions</p>
+                                    <p class="small mb-0"><strong>info@beritshalvah.com</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                                    <h6>Business Hours</h6>
+                                    <p class="small mb-0">Mon - Fri: 8AM - 6PM</p>
+                                    <p class="small mb-0">Sat: 9AM - 1PM</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'dashboard:home' %}" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>Go to Dashboard
+                        </a>
+                        <a href="{% url 'loans:application_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>View Applications
+                        </a>
+                        <a href="{% url 'loans:modern_application' %}" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Apply Again
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

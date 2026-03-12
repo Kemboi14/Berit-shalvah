@@ -1,0 +1,537 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Loans — Berit Shalvah{% endblock %}
+{% block nav_loans %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dash-layout { display: flex; min-height: calc(100vh - 64px); }
+    .dash-content {
+        flex: 1;
+        margin-left: 260px;
+        background: var(--gray-50);
+        min-height: calc(100vh - 64px);
+    }
+    .dash-inner { padding: 2rem; }
+
+    /* Filter bar */
+    .filter-bar {
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-xl);
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: .75rem;
+        margin-bottom: 1.5rem;
+    }
+    .filter-bar .filter-label {
+        font-size: .8125rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        white-space: nowrap;
+    }
+    .filter-chip {
+        padding: .35rem .875rem;
+        border-radius: 100px;
+        font-size: .8125rem;
+        font-weight: 600;
+        border: 1.5px solid var(--gray-200);
+        background: #fff;
+        color: var(--gray-600);
+        cursor: pointer;
+        transition: var(--trans-fast);
+        text-decoration: none;
+        display: inline-block;
+    }
+    .filter-chip:hover,
+    .filter-chip.active {
+        background: var(--bs-primary);
+        border-color: var(--bs-primary);
+        color: #fff;
+    }
+    .filter-chip.active { box-shadow: 0 2px 8px rgba(27,58,107,.25); }
+
+    /* Search box */
+    .search-box {
+        position: relative;
+        margin-left: auto;
+        min-width: 220px;
+    }
+    .search-box i {
+        position: absolute;
+        left: .875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        font-size: .875rem;
+        pointer-events: none;
+    }
+    .search-box input {
+        padding-left: 2.5rem;
+        height: 38px;
+        font-size: .875rem;
+    }
+
+    /* Application row cards */
+    .app-row {
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-xl);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: var(--trans-base);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .app-row::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; bottom: 0;
+        width: 4px;
+        background: var(--lc, var(--gray-200));
+    }
+    .app-row:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--bs-primary);
+    }
+    .app-row-main { flex: 1; min-width: 200px; }
+    .app-ref {
+        font-size: .75rem;
+        font-weight: 700;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        margin-bottom: .25rem;
+    }
+    .app-amount {
+        font-size: 1.375rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        letter-spacing: -.025em;
+        line-height: 1.1;
+    }
+    .app-purpose {
+        font-size: .875rem;
+        color: var(--gray-500);
+        margin-top: .2rem;
+    }
+    .app-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .375rem 1.25rem;
+        margin-top: .875rem;
+    }
+    .app-meta-item { display: flex; align-items: center; gap: .375rem; font-size: .8125rem; color: var(--gray-500); }
+    .app-meta-item i { color: var(--gray-400); font-size: .75rem; }
+    .app-meta-item strong { color: var(--gray-700); font-weight: 600; }
+
+    .app-row-status { flex-shrink: 0; text-align: center; }
+    .app-row-actions {
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        flex-shrink: 0;
+    }
+    .app-row-actions .btn { white-space: nowrap; min-width: 120px; text-align: center; }
+
+    /* Sync badge */
+    .sync-badge {
+        display: inline-flex; align-items: center; gap: .3rem;
+        font-size: .7rem; font-weight: 700;
+        padding: .2rem .625rem;
+        border-radius: 100px;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+    .sync-badge::before {
+        content: ''; width: 5px; height: 5px;
+        border-radius: 50%; background: currentColor;
+    }
+    .sync-yes { background: var(--bs-success-light); color: var(--bs-success); }
+    .sync-no  { background: var(--gray-100); color: var(--gray-500); }
+
+    /* Empty state card */
+    .empty-card {
+        background: #fff;
+        border: 2px dashed var(--gray-200);
+        border-radius: var(--radius-2xl);
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+    .empty-card .empty-icon {
+        width: 80px; height: 80px;
+        background: linear-gradient(135deg, #EEF2FF, #E0F2FE);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2rem; color: var(--bs-primary);
+        margin: 0 auto 1.5rem;
+    }
+    .empty-card h4 { font-weight: 800; color: var(--gray-800); margin-bottom: .5rem; }
+    .empty-card p  { color: var(--gray-500); font-size: .9375rem; max-width: 360px; margin: 0 auto 1.75rem; }
+
+    /* Pagination */
+    .page-link {
+        color: var(--bs-primary);
+        border-radius: var(--radius-md) !important;
+        border: 1px solid var(--gray-200);
+        padding: .5rem .875rem;
+        font-size: .875rem;
+        font-weight: 600;
+        transition: var(--trans-fast);
+        margin: 0 .2rem;
+    }
+    .page-link:hover   { background: var(--bs-primary); color: #fff; border-color: var(--bs-primary); }
+    .page-item.active .page-link { background: var(--bs-primary); border-color: var(--bs-primary); color: #fff; }
+    .page-item.disabled .page-link { color: var(--gray-400); }
+
+    /* Summary stat row */
+    .summary-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .summary-chip {
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        padding: .875rem 1.25rem;
+        flex: 1;
+        min-width: 140px;
+        transition: var(--trans-base);
+    }
+    .summary-chip:hover { box-shadow: var(--shadow-sm); }
+    .summary-chip .sc-num  { font-size: 1.5rem; font-weight: 800; color: var(--gray-900); letter-spacing: -.03em; line-height: 1; }
+    .summary-chip .sc-label { font-size: .75rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: .06em; margin-top: .3rem; }
+
+    @media (max-width: 991.98px) {
+        .dash-content { margin-left: 0; }
+        .dash-inner   { padding: 1.25rem; }
+        .app-row-actions { flex-direction: row; }
+    }
+    @media (max-width: 575.98px) {
+        .app-row { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        .app-row-actions { flex-direction: row; width: 100%; }
+        .app-row-actions .btn { flex: 1; }
+        .search-box { min-width: 100%; margin-left: 0; }
+    }
+</style>
+{% endblock %}
+
+{% block full_content %}
+<div class="dash-layout">
+
+    <!-- ══════ SIDEBAR ══════ -->
+    <aside class="bs-sidebar" id="bsSidebar">
+        <div class="sidebar-user">
+            <div class="avatar">
+                {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+            </div>
+            <div style="min-width:0;">
+                <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                <div class="user-role">Client Account</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section-title">Main</div>
+        <nav></nav>
+            <a href="{% url 'dashboard:home' %}" class="nav-link">
+                <i class="fas fa-th-large"></i>Dashboard
+            </a>
+            <a href="{% url 'loans:modern_application' %}" class="nav-link">
+                <i class="fas fa-plus-circle"></i>Apply for Loan
+            </a>
+            <a href="{% url 'loans:application_list' %}" class="nav-link active">
+                <i class="fas fa-file-contract"></i>My Loans
+            </a>
+        </nav>
+
+        <div class="sidebar-section-title">Account</div>
+        <nav>
+            <a href="{% url 'accounts:profile' %}" class="nav-link">
+                <i class="fas fa-user"></i>My Profile
+            </a>
+            <a href="{% url 'accounts:documents' %}" class="nav-link">
+                <i class="fas fa-folder"></i>My Documents
+            </a>
+            <a href="{% url 'accounts:settings' %}" class="nav-link">
+                <i class="fas fa-cog"></i>Settings
+            </a>
+        </nav>
+
+        {% if request.user.is_staff %}
+        <div class="sidebar-section-title">Administration</div>
+        <nav>
+            <a href="{% url 'dashboard:staff' %}" class="nav-link">
+                <i class="fas fa-users-cog"></i>Staff Dashboard
+            </a>
+            <a href="{% url 'admin:index' %}" class="nav-link">
+                <i class="fas fa-tools"></i>Django Admin
+            </a>
+        </nav>
+        {% endif %}
+
+        <hr>
+        <nav>
+            <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="nav-link" style="color:rgba(255,100,100,.7);background:none;border:none;width:100%;text-align:left;cursor:pointer;padding:0;"><i class="fas fa-sign-out-alt"></i>Sign Out</button></form>
+        </nav>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- ══════ MAIN CONTENT ══════ -->
+    <div class="dash-content">
+
+        <!-- Mobile top bar -->
+        <div class="d-lg-none d-flex align-items-center justify-content-between px-3 py-2"
+             style="background:#fff;border-bottom:1px solid var(--gray-200);">
+            <button onclick="openSidebar()" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span style="font-weight:700;font-size:.9rem;color:var(--gray-900);">My Loans</span>
+            <a href="{% url 'loans:modern_application' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i>
+            </a>
+        </div>
+
+        <div class="dash-inner">
+
+            <!-- Page header -->
+            <div class="bs-page-header mb-4" style="border-radius:var(--radius-xl);margin-bottom:1.5rem;">
+                <div>
+                    <h1><i class="fas fa-file-contract me-2 text-primary"></i>My Loan Applications</h1>
+                    <nav aria-label="breadcrumb" class="mt-1">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">My Loans</li>
+                        </ol>
+                    </nav>
+                </div>
+                <a href="{% url 'loans:modern_application' %}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>New Application
+                </a>
+            </div>
+
+            <!-- Summary chips -->
+            <div class="summary-row">
+                <div class="summary-chip">
+                    <div class="sc-num">{{ total_applications|default:"0" }}</div>
+                    <div class="sc-label">Total</div>
+                </div>
+                <div class="summary-chip" style="border-top:3px solid var(--bs-success);">
+                    <div class="sc-num" style="color:var(--bs-success);">{{ active_count|default:"0" }}</div>
+                    <div class="sc-label">Active</div>
+                </div>
+                <div class="summary-chip" style="border-top:3px solid var(--bs-warning);">
+                    <div class="sc-num" style="color:var(--bs-warning);">{{ pending_count|default:"0" }}</div>
+                    <div class="sc-label">Pending</div>
+                </div>
+                <div class="summary-chip" style="border-top:3px solid var(--bs-danger);">
+                    <div class="sc-num" style="color:var(--bs-danger);">{{ rejected_count|default:"0" }}</div>
+                    <div class="sc-label">Rejected</div>
+                </div>
+                <div class="summary-chip" style="border-top:3px solid var(--bs-primary);">
+                    <div class="sc-num" style="font-size:1rem;color:var(--bs-primary);">
+                        KES {{ total_borrowed|default:"0"|floatformat:0 }}
+                    </div>
+                    <div class="sc-label">Total Borrowed</div>
+                </div>
+            </div>
+
+            <!-- Filter bar -->
+            <div class="filter-bar">
+                <span class="filter-label"><i class="fas fa-filter me-1"></i>Filter:</span>
+                <a href="?status=all"    class="filter-chip {% if not request.GET.status or request.GET.status == 'all' %}active{% endif %}">All</a>
+                <a href="?status=draft"  class="filter-chip {% if request.GET.status == 'draft' %}active{% endif %}">Draft</a>
+                <a href="?status=submitted" class="filter-chip {% if request.GET.status == 'submitted' %}active{% endif %}">Submitted</a>
+                <a href="?status=under_review" class="filter-chip {% if request.GET.status == 'under_review' %}active{% endif %}">Under Review</a>
+                <a href="?status=approved" class="filter-chip {% if request.GET.status == 'approved' %}active{% endif %}">Approved</a>
+                <a href="?status=active"  class="filter-chip {% if request.GET.status == 'active' %}active{% endif %}">Active</a>
+                <a href="?status=rejected" class="filter-chip {% if request.GET.status == 'rejected' %}active{% endif %}">Rejected</a>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" id="searchInput"
+                           placeholder="Search by reference…" value="{{ request.GET.q|default:'' }}">
+                </div>
+            </div>
+
+            <!-- Applications list -->
+            {% if applications %}
+                {% for app in applications %}
+                <div class="app-row" style="
+                    {% if app.status == 'APPROVED' or app.status == 'ACTIVE' or app.status == 'DISBURSED' %}--lc: var(--bs-success);
+                    {% elif app.status == 'REJECTED' %}--lc: var(--bs-danger);
+                    {% elif app.status == 'SUBMITTED' or app.status == 'UNDER_REVIEW' %}--lc: var(--bs-warning);
+                    {% elif app.status == 'DRAFT' %}--lc: var(--gray-300);
+                    {% else %}--lc: var(--bs-primary);{% endif %}
+                ">
+                    <!-- Main info -->
+                    <div class="app-row-main">
+                        <div class="app-ref">{{ app.reference_number|default:"DRAFT" }}</div>
+                        <div class="app-amount">KES {{ app.loan_amount|floatformat:0|default:"—" }}</div>
+                        <div class="app-purpose">{{ app.loan_purpose|default:"General Purpose Loan" }}</div>
+                        <div class="app-meta">
+                            <div class="app-meta-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Applied <strong>{{ app.created_at|date:"d M Y" }}</strong></span>
+                            </div>
+                            <div class="app-meta-item">
+                                <i class="fas fa-clock"></i>
+                                <span><strong>{{ app.loan_duration|default:"—" }}</strong> months</span>
+                            </div>
+                            <div class="app-meta-item">
+                                <i class="fas fa-percentage"></i>
+                                <span><strong>{{ app.interest_rate|default:"20" }}%</strong> p.a.</span>
+                            </div>
+                            {% if app.submitted_at %}
+                            <div class="app-meta-item">
+                                <i class="fas fa-paper-plane"></i>
+                                <span>Submitted <strong>{{ app.submitted_at|date:"d M Y" }}</strong></span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Sync status -->
+                    <div class="text-center" style="flex-shrink:0;">
+                        {% if app.odoo_synced %}
+                            <span class="sync-badge sync-yes">Synced</span>
+                        {% else %}
+                            <span class="sync-badge sync-no">Pending</span>
+                        {% endif %}
+                        <div style="font-size:.7rem;color:var(--gray-400);margin-top:.3rem;">Odoo</div>
+                    </div>
+
+                    <!-- Status pill -->
+                    <div class="app-row-status">
+                        <span class="status-pill status-{{ app.status|lower }}">
+                            {{ app.get_status_display }}
+                        </span>
+                        {% if app.loan_amount and app.loan_duration %}
+                        <div style="margin-top:.625rem;font-size:.75rem;color:var(--gray-500);">
+                            <div style="font-weight:600;color:var(--gray-700);">
+                                ~KES {{ app.monthly_repayment|floatformat:0|default:"—" }}/mo
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="app-row-actions">
+                        <a href="{% url 'loans:application_detail' app.pk %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>View
+                        </a>
+                        {% if app.status == 'DRAFT' %}
+                        <a href="{% url 'loans:modern_application' %}?edit={{ app.pk }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                        {% else %}
+                        <a href="{% url 'loans:application_detail' app.pk %}" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">
+                            <i class="fas fa-calendar me-1"></i>Schedule
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <nav class="d-flex justify-content-center mt-4" aria-label="Loan applications pagination">
+                    <ul class="pagination mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                                <i class="fas fa-chevron-left fa-xs me-1"></i>Prev
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
+                                Next<i class="fas fa-chevron-right fa-xs ms-1"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <!-- Empty state -->
+                <div class="empty-card">
+                    <div class="empty-icon">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                    <h4>No loan applications yet</h4>
+                    <p>
+                        Start your financial journey with Berit Shalvah.
+                        Apply for a personal, business or emergency loan in just a few minutes.
+                    </p>
+                    <a href="{% url 'loans:modern_application' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus-circle me-2"></i>Apply for Your First Loan
+                    </a>
+                    <div class="mt-3">
+                        <a href="{% url 'dashboard:home' %}" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-600);">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+        <!-- /dash-inner -->
+    </div>
+    <!-- /dash-content -->
+
+</div>
+<!-- /dash-layout -->
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openSidebar() {
+        document.getElementById('bsSidebar').classList.add('open');
+        document.getElementById('sidebarOverlay').classList.add('show');
+    }
+    function closeSidebar() {
+        document.getElementById('bsSidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('show');
+    }
+
+    // Client-side search filter
+    var searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            var query = this.value.toLowerCase().trim();
+            document.querySelectorAll('.app-row').forEach(function (row) {
+                var text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+    }
+</script>
+{% endblock %}

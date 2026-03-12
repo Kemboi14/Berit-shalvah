@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Demo Partners -->
+    <record id="demo_applicant_1" model="res.partner">
+        <field name="name">John Mwangi Kamau</field>
+        <field name="street">Thika Road, Nairobi</field>
+        <field name="phone">+254712345678</field>
+        <field name="email">john.mwangi@email.com</field>
+        <field name="ref">12345678</field>
+        <field name="is_company" eval="False"/>
+    </record>
+
+    <record id="demo_applicant_2" model="res.partner">
+        <field name="name">Mary Wanjiku Njoroge</field>
+        <field name="street">Kiambu Town, Kiambu County</field>
+        <field name="phone">+254723456789</field>
+        <field name="email">mary.wanjiku@email.com</field>
+        <field name="ref">87654321</field>
+        <field name="is_company" eval="False"/>
+    </record>
+
+    <!-- Demo Loan Applications -->
+    <record id="demo_loan_application_1" model="berit.loan.application">
+        <field name="applicant_id" ref="demo_applicant_1"/>
+        <field name="loan_amount">150000</field>
+        <field name="loan_duration">6</field>
+        <field name="loan_purpose">Business expansion - purchase new equipment</field>
+        <field name="state">approved</field>
+        <field name="application_date" eval="(datetime.now() - timedelta(days=15)).strftime('%Y-%m-%d')"/>
+        <field name="approval_date" eval="(datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')"/>
+        <field name="disbursement_date" eval="(datetime.now() - timedelta(days=8)).strftime('%Y-%m-%d')"/>
+        <field name="kyc_verified" eval="True"/>
+        <field name="crb_cleared" eval="True"/>
+        <field name="loan_officer_id" ref="base.user_admin"/>
+    </record>
+
+    <record id="demo_loan_application_2" model="berit.loan.application">
+        <field name="applicant_id" ref="demo_applicant_2"/>
+        <field name="loan_amount">500000</field>
+        <field name="loan_duration">12</field>
+        <field name="loan_purpose">Home renovation and construction</field>
+        <field name="state">active</field>
+        <field name="application_date" eval="(datetime.now() - timedelta(days=45)).strftime('%Y-%m-%d')"/>
+        <field name="approval_date" eval="(datetime.now() - timedelta(days=40)).strftime('%Y-%m-%d')"/>
+        <field name="disbursement_date" eval="(datetime.now() - timedelta(days=38)).strftime('%Y-%m-%d')"/>
+        <field name="kyc_verified" eval="True"/>
+        <field name="crb_cleared" eval="True"/>
+        <field name="loan_officer_id" ref="base.user_admin"/>
+    </record>
+
+    <record id="demo_loan_application_3" model="berit.loan.application">
+        <field name="applicant_id" ref="demo_applicant_1"/>
+        <field name="loan_amount">75000</field>
+        <field name="loan_duration">3</field>
+        <field name="loan_purpose">Emergency medical expenses</field>
+        <field name="state">under_review</field>
+        <field name="application_date" eval="(datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')"/>
+        <field name="kyc_verified" eval="True"/>
+        <field name="crb_cleared" eval="True"/>
+        <field name="loan_officer_id" ref="base.user_admin"/>
+    </record>
+
+    <!-- Demo Collaterals -->
+    <record id="demo_collateral_1" model="berit.collateral">
+        <field name="loan_id" ref="demo_loan_application_1"/>
+        <field name="collateral_type">vehicle</field>
+        <field name="description">Toyota Fielder - 2015 Model, Good Condition</field>
+        <field name="estimated_value">225000</field>
+        <field name="valuation_date" eval="(datetime.now() - timedelta(days=20)).strftime('%Y-%m-%d')"/>
+        <field name="location">Nairobi, Kenya</field>
+        <field name="registration_number">KCD 123A</field>
+        <field name="is_verified" eval="True"/>
+        <field name="verified_by" ref="base.user_admin"/>
+        <field name="verified_date" eval="(datetime.now() - timedelta(days="18")).strftime('%Y-%m-%d')"/>
+    </record>
+
+    <record id="demo_collateral_2" model="berit.collateral">
+        <field name="loan_id" ref="demo_loan_application_2"/>
+        <field name="collateral_type">property</field>
+        <field name="description">Residential plot in Kiambu County, 1/8 acre</field>
+        <field name="estimated_value">750000</field>
+        <field name="valuation_date" eval="(datetime.now() - timedelta(days="50")).strftime('%Y-%m-%d')"/>
+        <field name="location">Kiambu County, Kenya</field>
+        <field name="is_verified" eval="True"/>
+        <field name="verified_by" ref="base.user_admin"/>
+        <field name="verified_date" eval="(datetime.now() - timedelta(days="48")).strftime('%Y-%m-%d')"/>
+    </record>
+
+    <!-- Demo Guarantors -->
+    <record id="demo_guarantor_1" model="berit.guarantor">
+        <field name="loan_id" ref="demo_loan_application_1"/>
+        <field name="name">Peter Njoroge Mwangi</field>
+        <field name="id_number">23456789</field>
+        <field name="phone">+254734567890</field>
+        <field name="email">peter.njoroge@email.com</field>
+        <field name="employer_address">ABC Company Ltd, Industrial Area, Nairobi</field>
+        <field name="relationship_to_applicant">friend</field>
+        <field name="occupation">Accountant</field>
+        <field name="monthly_income">80000</field>
+        <field name="years_known">5</field>
+        <field name="is_verified" eval="True"/>
+        <field name="verified_by" ref="base.user_admin"/>
+        <field name="verified_date" eval="(datetime.now() - timedelta(days="12")).strftime('%Y-%m-%d')"/>
+    </record>
+
+    <record id="demo_guarantor_2" model="berit.guarantor">
+        <field name="loan_id" ref="demo_loan_application_2"/>
+        <field name="name">Grace Nyambura Kamau</field>
+        <field name="id_number">34567890</field>
+        <field name="phone">+254745678901</field>
+        <field name="email">grace.nyambura@email.com</field>
+        <field name="employer_address">XYZ Bank, Thika Road, Nairobi</field>
+        <field name="relationship_to_applicant">family</field>
+        <field name="occupation">Bank Manager</field>
+        <field name="monthly_income">150000</field>
+        <field name="years_known">10</field>
+        <field name="is_verified" eval="True"/>
+        <field name="verified_by" ref="base.user_admin"/>
+        <field name="verified_date" eval="(datetime.now() - timedelta(days="42")).strftime('%Y-%m-%d')"/>
+    </record>
+
+    <!-- Demo Documents -->
+    <record id="demo_document_1" model="berit.loan.document">
+        <field name="loan_id" ref="demo_loan_application_1"/>
+        <field name="document_type">id</field>
+        <field name="filename">John_Mwangi_ID_Copy.pdf</field>
+        <field name="upload_date" eval="(datetime.now() - timedelta(days="15")).strftime('%Y-%m-%d')"/>
+        <field name="verified" eval="True"/>
+        <field name="verified_by" ref="base.user_admin"/>
+        <field name="verified_date" eval="(datetime.now() - timedelta(days="14")).strftime('%Y-%m-%d')"/>
+        <field name="is_required" eval="True"/>
+    </record>
+
+    <record id="demo_document_2" model="berit.loan.document">
+        <field name="loan_id" ref="demo_loan_application_1"/>
+        <field name="document_type">kra_pin</field>
+        <field name="filename">John_Mwangi_KRA_PIN.pdf</field>
+        <field name="upload_date" eval="(datetime.now() - timedelta(days="15")).strftime('%Y-%m-%d')"/>
+        <field name="verified" eval="True"/>
+        <field name="verified_by" ref="base.user_admin"/>
+        <field name="verified_date" eval="(datetime.now() - timedelta(days="14")).strftime('%Y-%m-%d')"/>
+        <field name="is_required" eval="True"/>
+    </record>
+
+    <record id="demo_document_3" model="berit.loan.document">
+        <field name="loan_id" ref="demo_loan_application_1"/>
+        <field name="document_type">crb</field>
+        <field name="filename">John_Mwangi_CRB_Clearance.pdf</field>
+        <field name="upload_date" eval="(datetime.now() - timedelta(days="15")).strftime('%Y-%m-%d')"/>
+        <field name="verified" eval="True"/>
+        <field name="verified_by" ref="base.user_admin"/>
+        <field name="verified_date" eval="(datetime.now() - timedelta(days="14")).strftime('%Y-%m-%d')"/>
+        <field name="is_required" eval="True"/>
+        <field name="expiry_date" eval="(datetime.now() + timedelta(days="345")).strftime('%Y-%m-%d')"/>
+    </record>
+
+    <!-- Demo Repayment Schedules -->
+    <record id="demo_repayment_1_1" model="berit.repayment.schedule">
+        <field name="loan_id" ref="demo_loan_application_1"/>
+        <field name="due_date" eval="(datetime.now() + timedelta(days="22")).strftime('%Y-%m-%d')"/>
+        <field name="principal_amount" eval="25000"/>
+        <field name="interest_amount" eval="2625"/>
+        <field name="total_due" eval="27625"/>
+        <field name="status">pending</field>
+    </record>
+
+    <record id="demo_repayment_1_2" model="berit.repayment.schedule">
+        <field name="loan_id" ref="demo_loan_application_1"/>
+        <field name="due_date" eval="(datetime.now() + timedelta(days="52")).strftime('%Y-%m-%d')"/>
+        <field name="principal_amount" eval="25000"/>
+        <field name="interest_amount" eval="2625"/>
+        <field name="total_due" eval="27625"/>
+        <field name="status">pending</field>
+    </record>
+
+    <record id="demo_repayment_2_1" model="berit.repayment.schedule">
+        <field name="loan_id" ref="demo_loan_application_2"/>
+        <field name="due_date" eval="(datetime.now() - timedelta(days="2")).strftime('%Y-%m-%d')"/>
+        <field name="principal_amount" eval="41666.67"/>
+        <field name="interest_amount" eval="3750"/>
+        <field name="total_due" eval="45416.67"/>
+        <field name="status">overdue"/>
+        <field name="days_overdue" eval="2"/>
+        <field name="penalty_amount" eval="908.33"/>
+    </record>
+
+    <record id="demo_repayment_2_2" model="berit.repayment.schedule">
+        <field name="loan_id" ref="demo_loan_application_2"/>
+        <field name="due_date" eval="(datetime.now() + timedelta(days="28")).strftime('%Y-%m-%d')"/>
+        <field name="principal_amount" eval="41666.67"/>
+        <field name="interest_amount" eval="3750"/>
+        <field name="total_due" eval="45416.67"/>
+        <field name="status">pending</field>
+    </record>
+</odoo>

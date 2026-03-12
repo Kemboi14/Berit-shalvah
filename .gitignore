@@ -1,0 +1,121 @@
+# Virtual environments (project-local)
+django_env/
+odoo_env/
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Logs directory
+logs/
+
+# Odoo data directory
+/var/lib/odoo/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+static/
+
+# Odoo
+*.pyc
+*.pyo
+*.pyd
+*.py~
+*.pyc~
+*.pyo~
+*.pyd~
+*.py~
+*.pyc~
+*.pyo~
+*.pyd~
+*.egg-info/
+*.pid
+*.log
+*.bak
+*.tmp
+*.swp
+*.swo
+*~
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Docker
+.dockerignore
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# SSL certificates
+nginx/ssl/*.crt
+nginx/ssl/*.key
+nginx/ssl/*.pem
+
+# Database dumps
+*.sql
+*.dump
+
+# Temporary files
+tmp/
+temp/

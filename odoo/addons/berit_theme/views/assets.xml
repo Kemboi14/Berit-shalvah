@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!--
+        Assets are declared in __manifest__.py under the 'assets' key
+        (Odoo 17+ modern approach).  This file is intentionally empty
+        and is NOT listed in the manifest 'data' key.
+    -->
+</odoo>

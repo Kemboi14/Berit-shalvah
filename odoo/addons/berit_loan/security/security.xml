@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- User Groups -->
+    <record id="berit_loan_user" model="res.groups">
+        <field name="name">Berit Loan User</field>
+        <field name="comment">Can read/create loan applications, cannot approve</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="berit_loan_officer" model="res.groups">
+        <field name="name">Berit Loan Officer</field>
+        <field name="comment">Can create, edit, submit, request review</field>
+        <field name="implied_ids" eval="[(4, ref('berit_loan_user'))]"/>
+    </record>
+
+    <record id="berit_loan_manager" model="res.groups">
+        <field name="name">Berit Loan Manager</field>
+        <field name="comment">Can approve, reject, disburse, access all records</field>
+        <field name="implied_ids" eval="[(4, ref('berit_loan_officer'))]"/>
+    </record>
+
+    <record id="berit_loan_admin" model="res.groups">
+        <field name="name">Berit Loan Admin</field>
+        <field name="comment">Full access including configuration</field>
+        <field name="implied_ids" eval="[(4, ref('berit_loan_manager'))]"/>
+    </record>
+</odoo>

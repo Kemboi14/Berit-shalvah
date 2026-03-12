@@ -1,0 +1,30 @@
+{% autoescape off %}
+Dear {{ user.full_name }},
+
+Your loan application has been successfully submitted!
+
+Application Details:
+- Reference Number: {{ application.reference_number }}
+- Loan Amount: KES {{ application.loan_amount|floatformat:2 }}
+- Duration: {{ application.loan_duration }} months
+- Monthly Repayment: KES {{ application.monthly_repayment|floatformat:2 }}
+- Total Repayable: KES {{ application.total_repayable|floatformat:2 }}
+
+What happens next?
+1. Your application will be reviewed by our team within 24-48 hours
+2. We'll contact you if we need any additional information
+3. You'll receive a final approval decision via email and SMS
+4. If approved, funds will be disbursed to your account
+
+You can track your application status by logging into your account at:
+{{ portal_settings.portal_base_url }}
+
+If you have any questions, please contact us at:
+Email: {{ portal_settings.company_email }}
+Phone: {{ portal_settings.company_phone }}
+
+Thank you for choosing {{ portal_settings.company_name }}!
+
+Best regards,
+{{ portal_settings.company_name }} Team
+{% endautoescape %}

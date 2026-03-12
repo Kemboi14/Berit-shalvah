@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Repayment Schedule Form View -->
+    <record id="view_berit_repayment_schedule_form" model="ir.ui.view">
+        <field name="name">berit.repayment.schedule.form</field>
+        <field name="model">berit.repayment.schedule</field>
+        <field name="arch" type="xml">
+            <form string="Repayment Schedule">
+                <header>
+                    <button
+                        name="action_mark_paid"
+                        string="Mark Paid"
+                        type="object"
+                        invisible="status not in ['pending','overdue','partially_paid']"
+                        class="btn-success"
+                    />
+                    <button
+                        name="send_reminder_email"
+                        string="Send Reminder"
+                        type="object"
+                        invisible="status not in ['pending','overdue']"
+                        class="btn-primary"
+                    />
+                    <field
+                        name="status"
+                        widget="statusbar"
+                        statusbar_visible="pending,partially_paid,paid,overdue"
+                    />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="loan_id" readonly="1" />
+                            <field name="due_date" />
+                            <field name="principal_amount" />
+                            <field name="interest_amount" />
+                            <field name="total_due" readonly="1" />
+                        </group>
+                        <group>
+                            <field name="amount_paid" />
+                            <field name="payment_date" readonly="1" />
+                            <field name="status" />
+                            <field name="days_overdue" readonly="1" />
+                            <field name="penalty_amount" readonly="1" />
+                        </group>
+                    </group>
+                    <group string="Payment Details">
+                        <field name="payment_method" />
+                        <field name="payment_reference" />
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1" />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Repayment Schedule List View -->
+    <record id="view_berit_repayment_schedule_tree" model="ir.ui.view">
+        <field name="name">berit.repayment.schedule.tree</field>
+        <field name="model">berit.repayment.schedule</field>
+        <field name="arch" type="xml">
+            <list
+                string="Repayment Schedule"
+                decoration-success="status == 'paid'"
+                decoration-warning="status == 'overdue'"
+                decoration-info="status == 'partially_paid'"
+            >
+                <field name="loan_id" />
+                <field name="due_date" />
+                <field name="principal_amount" widget="monetary" />
+                <field name="interest_amount" widget="monetary" />
+                <field name="total_due" widget="monetary" />
+                <field name="amount_paid" widget="monetary" />
+                <field name="status" />
+                <field name="days_overdue" />
+                <field name="penalty_amount" widget="monetary" />
+                <field name="payment_date" />
+                <button
+                    name="action_mark_paid"
+                    string="Mark Paid"
+                    type="object"
+                    invisible="status not in ['pending','overdue','partially_paid']"
+                    icon="fa-check"
+                />
+            </list>
+        </field>
+    </record>
+
+    <!-- Repayment Schedule Action -->
+    <record id="action_berit_repayment_schedule" model="ir.actions.act_window">
+        <field name="name">Repayment Schedule</field>
+        <field name="res_model">berit.repayment.schedule</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first repayment schedule
+            </p>
+            <p>
+                Use this form to create and manage loan repayment schedules.
+            </p>
+        </field>
+    </record>
+
+    <!-- Active Loans Repayment Schedule Action -->
+    <record
+        id="action_berit_repayment_schedule_active"
+        model="ir.actions.act_window"
+    >
+        <field name="name">Active Loan Repayments</field>
+        <field name="res_model">berit.repayment.schedule</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('loan_id.state', '=', 'active')]</field>
+        <field name="context">{'search_default_pending': 1}</field>
+    </record>
+
+    <!-- Overdue Repayments Action -->
+    <record
+        id="action_berit_repayment_schedule_overdue"
+        model="ir.actions.act_window"
+    >
+        <field name="name">Overdue Repayments</field>
+        <field name="res_model">berit.repayment.schedule</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('status', '=', 'overdue')]</field>
+    </record>
+</odoo>

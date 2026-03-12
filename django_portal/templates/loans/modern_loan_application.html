@@ -1,0 +1,2196 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Apply for Loan - Berit Shalvah Financial Services{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --dark-color: #1f2937;
+    --light-color: #f3f4f6;
+    --border-color: #e5e7eb;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.loan-application-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.progress-header {
+    background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+    color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.progress-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.progress-step::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    right: -50%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.3);
+    z-index: -1;
+}
+
+.progress-step:last-child::before {
+    display: none;
+}
+
+.progress-step.active::before {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.progress-step.completed::before {
+    background: var(--secondary-color);
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.5rem;
+    font-weight: bold;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.progress-step.active .step-number {
+    background: white;
+    color: var(--primary-color);
+    border-color: white;
+}
+
+.progress-step.completed .step-number {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.step-title {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+.progress-step.active .step-title,
+.progress-step.completed .step-title {
+    opacity: 1;
+    font-weight: 600;
+}
+
+.form-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+}
+
+.form-card.hidden {
+    display: none;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--light-color);
+}
+
+.section-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.25rem;
+}
+
+.section-title h2 {
+    margin: 0;
+    color: var(--dark-color);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.section-title p {
+    margin: 0.25rem 0 0 0;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.form-group {
+    position: relative;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    font-size: 0.875rem;
+}
+
+.form-label .required {
+    color: var(--danger-color);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.2s;
+    background: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-control.is-invalid {
+    border-color: var(--danger-color);
+    background: #fef2f2;
+}
+
+.invalid-feedback {
+    color: var(--danger-color);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.help-text {
+    color: #6b7280;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.loan-calculator {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin: 2rem 0;
+    border: 1px solid #bae6fd;
+}
+
+.calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.calculator-item {
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.calculator-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.calculator-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.document-upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: pointer;
+    background: #fafafa;
+}
+
+.document-upload-area:hover {
+    border-color: var(--primary-color);
+    background: #f0f9ff;
+}
+
+.document-upload-area.dragover {
+    border-color: var(--primary-color);
+    background: #dbeafe;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.document-list {
+    margin-top: 1.5rem;
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.document-info {
+    display: flex;
+    align-items: center;
+}
+
+.document-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.5rem;
+    background: var(--light-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    color: var(--primary-color);
+}
+
+.document-details {
+    flex: 1;
+}
+
+.document-name {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.25rem;
+}
+
+.document-size {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.document-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-badge.uploaded {
+    background: #dcfce7;
+    color: var(--secondary-color);
+}
+
+.status-badge.verified {
+    background: #dcfce7;
+    color: var(--secondary-color);
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: var(--warning-color);
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--light-color);
+    color: var(--dark-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--secondary-color), #059669);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--danger-color), #dc2626);
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-outline:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.collateral-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.collateral-card {
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    background: white;
+    position: relative;
+}
+
+.collateral-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.collateral-type {
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.collateral-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.guarantor-card {
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    background: white;
+    margin-bottom: 1rem;
+}
+
+.guarantor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.guarantor-name {
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.guarantor-relation {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.summary-section {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin: 2rem 0;
+    border: 1px solid #bae6fd;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.summary-item {
+    padding: 1rem;
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.summary-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.summary-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dark-color);
+}
+
+.completion-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.completion-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--light-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.completion-progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary-color), #059669);
+    transition: width 0.3s ease;
+}
+
+.completion-text {
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid;
+}
+
+.alert-info {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #1e40af;
+}
+
+.alert-warning {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+
+.alert-success {
+    background: #dcfce7;
+    border-color: #10b981;
+    color: #065f46;
+}
+
+.alert-danger {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+@media (max-width: 768px) {
+    .loan-application-container {
+        padding: 1rem;
+    }
+    
+    .progress-steps {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .progress-step::before {
+        display: none;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .calculator-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="loan-application-container">
+    <!-- Progress Header -->
+    <div class="progress-header">
+        <h1 class="text-center mb-4">Loan Application</h1>
+        <div class="progress-steps">
+            <div class="progress-step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-title">Personal Info</div>
+            </div>
+            <div class="progress-step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-title">Loan Details</div>
+            </div>
+            <div class="progress-step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-title">KYC Documents</div>
+            </div>
+            <div class="progress-step" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-title">Collateral</div>
+            </div>
+            <div class="progress-step" data-step="5">
+                <div class="step-number">5</div>
+                <div class="step-title">Guarantor</div>
+            </div>
+            <div class="progress-step" data-step="6">
+                <div class="step-number">6</div>
+                <div class="step-title">Review & Submit</div>
+            </div>
+        </div>
+        <div class="completion-indicator">
+            <span class="completion-text">Completion: <span id="completion-percentage">0</span>%</span>
+            <div class="completion-bar">
+                <div class="completion-progress" id="completion-bar" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="loanApplicationForm" action="{% url 'loans:modern_application' %}">
+        {% csrf_token %}
+        
+        <!-- Step 1: Personal Information -->
+        <div class="form-card" id="step1">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="section-title">
+                    <h2>Personal Information</h2>
+                    <p>Please provide your personal details for verification</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Full Name <span class="required">*</span></label>
+                    <input type="text" class="form-control" name="full_name" value="{{ user.get_full_name }}" required>
+                    <small class="help-text">Enter your full legal name as appears on ID</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">National ID Number <span class="required">*</span></label>
+                    <input type="text" class="form-control" name="national_id" required pattern="[0-9]{8}" maxlength="8">
+                    <small class="help-text">8-digit Kenyan National ID number</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone Number <span class="required">*</span></label>
+                    <input type="tel" class="form-control" name="phone" value="{{ user.phone }}" required pattern="07[0-9]{8}|2547[0-9]{8}">
+                    <small class="help-text">Format: 07XXXXXXXX or 2547XXXXXXXX</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Address <span class="required">*</span></label>
+                    <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                    <small class="help-text">We'll send updates to this email</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date of Birth <span class="required">*</span></label>
+                    <input type="date" class="form-control" name="date_of_birth" required max="{{ today }}">
+                    <small class="help-text">You must be at least 18 years old</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Gender <span class="required">*</span></label>
+                    <select class="form-control" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label">Physical Address <span class="required">*</span></label>
+                    <textarea class="form-control" name="address" rows="3" required placeholder="Enter your residential address"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">County <span class="required">*</span></label>
+                    <select class="form-control" name="county" required>
+                        <option value="">Select County</option>
+                        <option value="nairobi">Nairobi</option>
+                        <option value="mombasa">Mombasa</option>
+                        <option value="kisumu">Kisumu</option>
+                        <option value="nakuru">Nakuru</option>
+                        <option value="eldoret">Eldoret</option>
+                        <option value="thika">Thika</option>
+                        <option value="kitale">Kitale</option>
+                        <option value="garissa">Garissa</option>
+                        <option value="kakamega">Kakamega</option>
+                        <option value="meru">Meru</option>
+                        <option value="nyeri">Nyeri</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Postal Code</label>
+                    <input type="text" class="form-control" name="postal_code" placeholder="e.g., 00100">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Marital Status <span class="required">*</span></label>
+                    <select class="form-control" name="marital_status" required>
+                        <option value="">Select Status</option>
+                        <option value="single">Single</option>
+                        <option value="married">Married</option>
+                        <option value="divorced">Divorced</option>
+                        <option value="widowed">Widowed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Number of Dependents <span class="required">*</span></label>
+                    <input type="number" class="form-control" name="dependents" min="0" max="20" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Loan Details -->
+        <div class="form-card hidden" id="step2">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+                <div class="section-title">
+                    <h2>Loan Details</h2>
+                    <p>Tell us about the loan you need</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Loan Amount (KES) <span class="required">*</span></label>
+                    <input type="number" class="form-control" name="loan_amount" id="loanAmount" min="1000" max="500000" step="1000" required>
+                    <small class="help-text">Between KES 1,000 and KES 500,000</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Loan Duration (Months) <span class="required">*</span></label>
+                    <select class="form-control" name="loan_duration" id="loanDuration" required>
+                        <option value="">Select Duration</option>
+                        <option value="1">1 Month</option>
+                        <option value="3">3 Months</option>
+                        <option value="6">6 Months</option>
+                        <option value="9">9 Months</option>
+                        <option value="12">12 Months</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Loan Purpose <span class="required">*</span></label>
+                    <select class="form-control" name="loan_purpose_category" required>
+                        <option value="">Select Purpose</option>
+                        <option value="business">Business Capital</option>
+                        <option value="education">School Fees</option>
+                        <option value="medical">Medical Emergency</option>
+                        <option value="home">Home Improvement</option>
+                        <option value="personal">Personal Use</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label">Detailed Purpose Description <span class="required">*</span></label>
+                    <textarea class="form-control" name="loan_purpose" rows="4" required placeholder="Please describe in detail how you intend to use this loan"></textarea>
+                </div>
+            </div>
+
+            <!-- Loan Calculator -->
+            <div class="loan-calculator" id="loanCalculator" style="display: none;">
+                <h3 class="text-center mb-4">Loan Calculation</h3>
+                <div class="calculator-grid">
+                    <div class="calculator-item">
+                        <div class="calculator-value" id="interestRate">-</div>
+                        <div class="calculator-label">Interest Rate</div>
+                    </div>
+                    <div class="calculator-item">
+                        <div class="calculator-value" id="monthlyRepayment">-</div>
+                        <div class="calculator-label">Monthly Repayment</div>
+                    </div>
+                    <div class="calculator-item">
+                        <div class="calculator-value" id="totalRepayable">-</div>
+                        <div class="calculator-label">Total Repayable</div>
+                    </div>
+                    <div class="calculator-item">
+                        <div class="calculator-value" id="legalFee">-</div>
+                        <div class="calculator-label">Legal Fee</div>
+                    </div>
+                    <div class="calculator-item">
+                        <div class="calculator-value" id="collateralRequired">-</div>
+                        <div class="calculator-label">Collateral Required</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: KYC Documents -->
+        <div class="form-card hidden" id="step3">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="section-title">
+                    <h2>KYC Documents</h2>
+                    <p>Upload required documents for verification</p>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                All documents must be clear, recent, and valid. File size should not exceed 5MB.
+            </div>
+
+            <!-- Required Documents -->
+            <h4 class="mb-3">Required Documents</h4>
+            
+            <div class="form-group">
+                <label class="form-label">National ID Copy (Front & Back) <span class="required">*</span></label>
+                <div class="document-upload-area" id="idCopyUpload">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h4>Upload National ID</h4>
+                    <p>Drag and drop or click to browse</p>
+                    <input type="file" name="id_copy" id="idCopyInput" accept="image/*,.pdf" style="display: none;" multiple>
+                </div>
+                <div class="document-list" id="idCopyList"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">KRA PIN Certificate <span class="required">*</span></label>
+                <div class="document-upload-area" id="kraPinUpload">
+                    <div class="upload-icon">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                    <h4>Upload KRA PIN Certificate</h4>
+                    <p>Recent KRA PIN certificate (PDF)</p>
+                    <input type="file" name="kra_pin" id="kraPinInput" accept=".pdf" style="display: none;">
+                </div>
+                <div class="document-list" id="kraPinList"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Passport Photo <span class="required">*</span></label>
+                <div class="document-upload-area" id="passportPhotoUpload">
+                    <div class="upload-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <h4>Upload Passport Photo</h4>
+                    <p>Recent passport-sized photo</p>
+                    <input type="file" name="passport_photo" id="passportPhotoInput" accept="image/*" style="display: none;">
+                </div>
+                <div class="document-list" id="passportPhotoList"></div>
+            </div>
+
+            <!-- Additional Documents -->
+            <h4 class="mb-3 mt-4">Additional Documents (Optional but Recommended)</h4>
+
+            <div class="form-group">
+                <label class="form-label">CRB Clearance Certificate</label>
+                <div class="document-upload-area" id="crbClearanceUpload">
+                    <div class="upload-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>Upload CRB Clearance</h4>
+                    <p>Recent CRB clearance certificate</p>
+                    <input type="file" name="crb_clearance" id="crbClearanceInput" accept=".pdf,image/*" style="display: none;">
+                </div>
+                <div class="document-list" id="crbClearanceList"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Bank Statement (Last 6 Months)</label>
+                <div class="document-upload-area" id="bankStatementUpload">
+                    <div class="upload-icon">
+                        <i class="fas fa-university"></i>
+                    </div>
+                    <h4>Upload Bank Statement</h4>
+                    <p>Last 6 months bank statements</p>
+                    <input type="file" name="bank_statement" id="bankStatementInput" accept=".pdf" style="display: none;" multiple>
+                </div>
+                <div class="document-list" id="bankStatementList"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Payslip (Last 3 Months)</label>
+                <div class="document-upload-area" id="payslipUpload">
+                    <div class="upload-icon">
+                        <i class="fas fa-money-check-alt"></i>
+                    </div>
+                    <h4>Upload Payslips</h4>
+                    <p>Last 3 months payslips</p>
+                    <input type="file" name="payslip" id="payslipInput" accept=".pdf,image/*" style="display: none;" multiple>
+                </div>
+                <div class="document-list" id="payslipList"></div>
+            </div>
+        </div>
+
+        <!-- Step 4: Collateral -->
+        <div class="form-card hidden" id="step4">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="section-title">
+                    <h2>Collateral Information</h2>
+                    <p>Add collateral to secure your loan (optional but recommended)</p>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Adding collateral increases your chances of loan approval and may qualify you for better interest rates.
+            </div>
+
+            <div id="collateralContainer">
+                <!-- Collateral items will be added here dynamically -->
+            </div>
+
+            <div class="text-center mb-3">
+                <button type="button" class="btn btn-outline" id="addCollateralBtn">
+                    <i class="fas fa-plus me-2"></i>Add Collateral
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" name="no_collateral" id="noCollateral">
+                    I don't have collateral to provide
+                </label>
+            </div>
+        </div>
+
+        <!-- Step 5: Guarantor -->
+        <div class="form-card hidden" id="step5">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="section-title">
+                    <h2>Guarantor Information</h2>
+                    <p>Add guarantors to support your loan application</p>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                A guarantor should be someone who can repay the loan if you default. They must have a stable income.
+            </div>
+
+            <div id="guarantorContainer">
+                <!-- Guarantor items will be added here dynamically -->
+            </div>
+
+            <div class="text-center mb-3">
+                <button type="button" class="btn btn-outline" id="addGuarantorBtn">
+                    <i class="fas fa-plus me-2"></i>Add Guarantor
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" name="no_guarantor" id="noGuarantor">
+                    I don't have a guarantor (may affect approval chances)
+                </label>
+            </div>
+        </div>
+
+        <!-- Step 6: Review & Submit -->
+        <div class="form-card hidden" id="step6">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="section-title">
+                    <h2>Review & Submit</h2>
+                    <p>Please review your application before submitting</p>
+                </div>
+            </div>
+
+            <!-- Application Summary -->
+            <div class="summary-section">
+                <h3 class="text-center mb-4">Application Summary</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Application Reference</div>
+                        <div class="summary-value" id="summaryReference">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Loan Amount</div>
+                        <div class="summary-value" id="summaryLoanAmount">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Duration</div>
+                        <div class="summary-value" id="summaryDuration">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Monthly Repayment</div>
+                        <div class="summary-value" id="summaryMonthlyPayment">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Interest Rate</div>
+                        <div class="summary-value" id="summaryInterestRate">-</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Total Repayable</div>
+                        <div class="summary-value" id="summaryTotalRepayable">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Summary -->
+            <div class="form-group">
+                <h4>Documents Uploaded</h4>
+                <div id="documentsSummary"></div>
+            </div>
+
+            <!-- Collateral Summary -->
+            <div class="form-group">
+                <h4>Collateral Provided</h4>
+                <div id="collateralSummary"></div>
+            </div>
+
+            <!-- Guarantor Summary -->
+            <div class="form-group">
+                <h4>Guarantors Added</h4>
+                <div id="guarantorSummary"></div>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" name="terms_accepted" id="termsAccepted" required>
+                    I accept the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a> and <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a> <span class="required">*</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" name="consent_to_check" id="consentToCheck" required>
+                    I consent to Berit Shalvah conducting credit checks and verifying my information <span class="required">*</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" name="information_true" id="informationTrue" required>
+                    I confirm that all information provided is true and accurate <span class="required">*</span>
+                </label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                    <i class="fas fa-paper-plane me-2"></i>
+                    Submit Application
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="action-buttons">
+            <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+                <i class="fas fa-arrow-left me-2"></i>Previous
+            </button>
+            <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                Next<i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Terms Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Terms and Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Loan Terms</h6>
+                <ul>
+                    <li>Interest rates vary based on loan amount and duration</li>
+                    <li>Legal fees: 2.5% of loan amount</li>
+                    <li>Late payment penalty: 1% per day</li>
+                    <li>Maximum loan duration: 12 months</li>
+                </ul>
+                
+                <h6>Repayment Terms</h6>
+                <ul>
+                    <li>Monthly repayments due on the same date each month</li>
+                    <li>Grace period: 3 days</li>
+                    <li>Early repayment allowed without penalty</li>
+                </ul>
+                
+                <h6>Default Terms</h6>
+                <ul>
+                    <li>Loan considered default after 30 days of non-payment</li>
+                    <li>Default affects credit score</li>
+                    <li>Collateral may be seized on default</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Privacy Modal -->
+<div class="modal fade" id="privacyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Privacy Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Data Collection</h6>
+                <p>We collect personal information, financial data, and documents to assess loan applications.</p>
+                
+                <h6>Data Usage</h6>
+                <p>Your information is used for:</p>
+                <ul>
+                    <li>Loan assessment and approval</li>
+                    <li>Credit reference checks</li>
+                    <li>Regulatory compliance</li>
+                    <li>Communication about your loan</li>
+                </ul>
+                
+                <h6>Data Protection</h6>
+                <p>We implement appropriate security measures to protect your personal data.</p>
+                
+                <h6>Data Sharing</h6>
+                <p>We may share your information with:</p>
+                <ul>
+                    <li>Credit reference bureaus</li>
+                    <li>Regulatory authorities</li>
+                    <li>Law enforcement agencies (when required)</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+console.log('Loan application JavaScript loaded successfully');
+
+// Form state management
+let currentStep = 1;
+const totalSteps = 6;
+let formData = {
+    documents: {},
+    collaterals: [],
+    guarantors: []
+};
+
+// Initialize form
+document.addEventListener('DOMContentLoaded', function() {
+    initializeForm();
+    setupEventListeners();
+    updateProgressBar();
+});
+
+function initializeForm() {
+    // Initialize Select2
+    $('select').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+    
+    // Generate reference number
+    generateReferenceNumber();
+    
+    // Setup file upload listeners
+    setupFileUploads();
+    
+    // Setup loan calculator
+    setupLoanCalculator();
+}
+
+function setupEventListeners() {
+    console.log('Setting up event listeners...');
+
+    // Navigation buttons
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+
+    console.log('Next button element:', nextBtn);
+    console.log('Previous button element:', prevBtn);
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', nextStep);
+        console.log('Next button event listener attached');
+    } else {
+        console.error('Next button not found!');
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', prevStep);
+        console.log('Previous button event listener attached');
+    }
+
+    // Form submission
+    const form = document.getElementById('loanApplicationForm');
+    console.log('Form element:', form);
+
+    if (form) {
+        form.addEventListener('submit', handleSubmit);
+        console.log('Form submit event listener attached');
+    }
+
+    // Add collateral button
+    const addCollateralBtn = document.getElementById('addCollateralBtn');
+    if (addCollateralBtn) {
+        addCollateralBtn.addEventListener('click', addCollateral);
+        console.log('Add collateral button event listener attached');
+    }
+
+    // Add guarantor button
+    const addGuarantorBtn = document.getElementById('addGuarantorBtn');
+    if (addGuarantorBtn) {
+        addGuarantorBtn.addEventListener('click', addGuarantor);
+        console.log('Add guarantor button event listener attached');
+    }
+
+    // No collateral checkbox
+    const noCollateralCheckbox = document.getElementById('noCollateral');
+    if (noCollateralCheckbox) {
+        noCollateralCheckbox.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                document.getElementById('collateralContainer').innerHTML = '';
+                formData.collaterals = [];
+            }
+        });
+    }
+
+    // No guarantor checkbox
+    const noGuarantorCheckbox = document.getElementById('noGuarantor');
+    if (noGuarantorCheckbox) {
+        noGuarantorCheckbox.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                document.getElementById('guarantorContainer').innerHTML = '';
+                formData.guarantors = [];
+            }
+        });
+    }
+
+    // Loan amount and duration change
+    const loanAmount = document.getElementById('loanAmount');
+    const loanDuration = document.getElementById('loanDuration');
+
+    if (loanAmount) {
+        loanAmount.addEventListener('input', calculateLoan);
+    }
+    if (loanDuration) {
+        loanDuration.addEventListener('change', calculateLoan);
+    }
+}
+
+function generateReferenceNumber() {
+    const year = new Date().getFullYear();
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const reference = `BERIT/LOAN/${year}/${random}`;
+    document.getElementById('summaryReference').textContent = reference;
+}
+
+function nextStep() {
+    if (validateCurrentStep()) {
+        if (currentStep < totalSteps) {
+            // Hide current step
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+
+            // Mark current step as completed
+            const stepElement = document.querySelector(`.progress-step[data-step="${currentStep}"]`);
+            if (stepElement) {
+                stepElement.classList.add('completed');
+                stepElement.classList.remove('active');
+            }
+
+            // Show next step
+            currentStep++;
+            showStep(currentStep);
+
+            // Update navigation buttons
+            updateNavigationButtons();
+
+            // Update progress
+            updateProgressBar();
+            updateCompletionPercentage();
+        }
+    }
+}
+
+function prevStep() {
+    if (currentStep > 1) {
+        // Hide current step
+        document.getElementById(`step${currentStep}`).classList.add('hidden');
+        
+        // Mark current step as inactive
+        const stepElement = document.querySelector(`.progress-step[data-step="${currentStep}"]`);
+        stepElement.classList.remove('active');
+        
+        // Show previous step
+        currentStep--;
+        showStep(currentStep);
+        
+        // Update navigation buttons
+        updateNavigationButtons();
+        
+        // Update progress
+        updateProgressBar();
+        updateCompletionPercentage();
+    }
+}
+
+function showStep(step) {
+    const stepElement = document.getElementById(`step${step}`);
+    stepElement.classList.remove('hidden');
+    stepElement.classList.add('fade-in');
+    
+    // Mark as active
+    const progressStep = document.querySelector(`.progress-step[data-step="${step}"]`);
+    progressStep.classList.add('active');
+    
+    // Special handling for review step
+    if (step === 6) {
+        populateSummary();
+    }
+}
+
+function validateCurrentStep() {
+    const currentStepCard = document.querySelector(`#step${currentStep}`);
+    if (!currentStepCard) return false;
+    
+    let isValid = true;
+    let firstInvalidField = null;
+    const requiredFields = currentStepCard.querySelectorAll('[required]');
+    
+    // Check required fields
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+            if (!firstInvalidField) {
+                firstInvalidField = field;
+            }
+
+            // Show error message
+            let errorMsg = 'This field is required';
+            if (field.type === 'file') {
+                errorMsg = 'Please upload this document';
+            }
+
+            if (!field.nextElementSibling || !field.nextElementSibling.classList.contains('invalid-feedback')) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                errorDiv.textContent = errorMsg;
+                field.parentNode.appendChild(errorDiv);
+            }
+        } else {
+            field.classList.remove('is-invalid');
+            // Remove error message if it exists
+            const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+        }
+    });
+
+    if (!isValid && firstInvalidField) {
+        // Show alert with summary of missing fields
+        alert('Please fill in all required fields before proceeding.');
+
+        // Focus first invalid field
+        firstInvalidField.focus();
+        // Scroll to field if needed
+        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        return false;
+    }
+    
+    // Step-specific validation
+    if (currentStep === 1) {
+        // Personal Info - check basic fields
+        const firstName = document.querySelector('input[name="first_name"]');
+        const lastName = document.querySelector('input[name="last_name"]');
+        const email = document.querySelector('input[name="email"]');
+        const phone = document.querySelector('input[name="phone"]');
+        
+        if (!firstName?.value.trim() || !lastName?.value.trim() || 
+            !email?.value.trim() || !phone?.value.trim()) {
+            showErrorMessage('Please fill in all required personal information fields');
+            return false;
+        }
+    }
+    
+    if (currentStep === 2) {
+        // Loan Details - check amount and purpose
+        const loanAmount = document.querySelector('input[name="loan_amount"]');
+        const loanDuration = document.querySelector('select[name="loan_duration"]');
+        const loanPurpose = document.querySelector('textarea[name="loan_purpose"]');
+        
+        if (!loanAmount?.value || !loanDuration?.value || !loanPurpose?.value.trim()) {
+            showErrorMessage('Please fill in all loan details');
+            return false;
+        }
+        
+        if (parseFloat(loanAmount.value) < 1000) {
+            showErrorMessage('Minimum loan amount is KES 1,000');
+            return false;
+        }
+    }
+    
+    if (currentStep === 3) {
+        // KYC Documents - check required documents
+        const requiredDocs = ['id_copy', 'kra_pin', 'passport_photo'];
+        const uploadedDocs = Object.keys(window.formData.documents);
+        
+        const missingDocs = requiredDocs.filter(doc => !uploadedDocs.includes(doc));
+        if (missingDocs.length > 0) {
+            showErrorMessage(`Please upload required documents: ${missingDocs.join(', ').replace(/_/g, ' ')}`);
+            return false;
+        }
+    }
+    
+    if (currentStep === 4) {
+        // Collateral - check if provided or marked as none
+        const noCollateral = document.getElementById('noCollateral')?.checked;
+        const collaterals = window.formData.collaterals || [];
+        
+        if (!noCollateral && collaterals.length === 0) {
+            showErrorMessage('Please add collateral or mark "I don\'t have collateral to provide"');
+            return false;
+        }
+    }
+    
+    if (currentStep === 5) {
+        // Guarantor - check if provided or marked as none
+        const noGuarantor = document.getElementById('noGuarantor')?.checked;
+        const guarantors = window.formData.guarantors || [];
+        
+        if (!noGuarantor && guarantors.length === 0) {
+            showErrorMessage('Please add a guarantor or mark "I don\'t have a guarantor to provide"');
+            return false;
+        }
+    }
+    
+    if (currentStep === 6) {
+        // Review & Submit - check terms acceptance
+        const termsAccepted = document.getElementById('termsAccepted')?.checked;
+        if (!termsAccepted) {
+            showErrorMessage('Please accept the terms and conditions');
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+function updateNavigationButtons() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const actionButtons = document.querySelector('.action-buttons');
+
+    // Show/hide previous button
+    prevBtn.style.display = currentStep > 1 ? 'inline-flex' : 'none';
+
+    // Update next button and submit button based on current step
+    if (currentStep === totalSteps) {
+        // On final step, hide navigation buttons and show submit button inside the form
+        actionButtons.style.display = 'none';
+        if (submitBtn) {
+            submitBtn.style.display = 'inline-flex';
+        }
+    } else {
+        // On other steps, show navigation buttons and hide submit button
+        actionButtons.style.display = 'flex';
+        nextBtn.style.display = 'inline-flex';
+        nextBtn.innerHTML = 'Next<i class="fas fa-arrow-right ms-2"></i>';
+        if (submitBtn) {
+            submitBtn.style.display = 'none';
+        }
+    }
+}
+
+function updateProgressBar() {
+    const progressSteps = document.querySelectorAll('.progress-step');
+    progressSteps.forEach((step, index) => {
+        const stepNumber = index + 1;
+        if (stepNumber < currentStep) {
+            step.classList.add('completed');
+            step.classList.remove('active');
+        } else if (stepNumber === currentStep) {
+            step.classList.add('active');
+            step.classList.remove('completed');
+        } else {
+            step.classList.remove('active', 'completed');
+        }
+    });
+}
+
+function updateCompletionPercentage() {
+    let completedSteps = 0;
+    
+    // Check personal info
+    if (document.querySelector('#step1 input[required]:valid, #step1 select[required]:valid, #step1 textarea[required]:valid')) {
+        completedSteps++;
+    }
+    
+    // Check loan details
+    if (document.getElementById('loanAmount').value && document.getElementById('loanDuration').value) {
+        completedSteps++;
+    }
+    
+    // Check documents
+    const requiredDocs = ['id_copy', 'kra_pin', 'passport_photo'];
+    let docsComplete = 0;
+    requiredDocs.forEach(docType => {
+        if (formData.documents[docType] && formData.documents[docType].length > 0) {
+            docsComplete++;
+        }
+    });
+    if (docsComplete >= 2) completedSteps++;
+    
+    // Check collateral or no collateral
+    if (formData.collaterals.length > 0 || document.getElementById('noCollateral').checked) {
+        completedSteps++;
+    }
+    
+    // Check guarantor or no guarantor
+    if (formData.guarantors.length > 0 || document.getElementById('noGuarantor').checked) {
+        completedSteps++;
+    }
+    
+    const percentage = Math.round((completedSteps / totalSteps) * 100);
+    document.getElementById('completion-percentage').textContent = percentage;
+    document.getElementById('completion-bar').style.width = percentage + '%';
+}
+
+// Loan Calculator
+function setupLoanCalculator() {
+    const loanAmount = document.getElementById('loanAmount');
+    const loanDuration = document.getElementById('loanDuration');
+    
+    [loanAmount, loanDuration].forEach(element => {
+        element.addEventListener('input', calculateLoan);
+        element.addEventListener('change', calculateLoan);
+    });
+}
+
+function calculateLoan() {
+    const amount = parseFloat(document.getElementById('loanAmount').value);
+    const duration = parseInt(document.getElementById('loanDuration').value);
+    
+    if (amount && duration) {
+        // Interest rates based on amount
+        let interestRate;
+        if (amount <= 10000) {
+            interestRate = 25;
+        } else if (amount <= 50000) {
+            interestRate = 20;
+        } else if (amount <= 100000) {
+            interestRate = 18;
+        } else if (amount <= 250000) {
+            interestRate = 15;
+        } else {
+            interestRate = 12;
+        }
+        
+        // Calculate monthly repayment
+        const monthlyInterest = amount * (interestRate / 100);
+        const principalPayment = amount / duration;
+        const monthlyRepayment = monthlyInterest + principalPayment;
+        const totalRepayable = monthlyRepayment * duration;
+        const legalFee = amount * 0.025; // 2.5%
+        const collateralRequired = amount * 1.5; // 1.5x loan amount
+        
+        // Update calculator display
+        document.getElementById('interestRate').textContent = interestRate + '%';
+        document.getElementById('monthlyRepayment').textContent = 'KES ' + monthlyRepayment.toLocaleString();
+        document.getElementById('totalRepayable').textContent = 'KES ' + totalRepayable.toLocaleString();
+        document.getElementById('legalFee').textContent = 'KES ' + legalFee.toLocaleString();
+        document.getElementById('collateralRequired').textContent = 'KES ' + collateralRequired.toLocaleString();
+        
+        // Show calculator
+        document.getElementById('loanCalculator').style.display = 'block';
+    }
+}
+
+// File Upload Handling
+function setupFileUploads() {
+    console.log('Setting up file uploads...');
+
+    const uploadAreas = [
+        { id: 'kraPinUpload', input: 'kraPinInput', list: 'kraPinList', type: 'kra_pin', multiple: false },
+        { id: 'passportPhotoUpload', input: 'passportPhotoInput', list: 'passportPhotoList', type: 'passport_photo', multiple: false },
+        { id: 'idCopyUpload', input: 'idCopyInput', list: 'idCopyList', type: 'id_copy', multiple: false },
+        { id: 'crbClearanceUpload', input: 'crbClearanceInput', list: 'crbClearanceList', type: 'crb_clearance', multiple: false },
+        { id: 'bankStatementUpload', input: 'bankStatementInput', list: 'bankStatementList', type: 'bank_statement', multiple: true },
+        { id: 'payslipUpload', input: 'payslipInput', list: 'payslipList', type: 'payslip', multiple: true }
+    ];
+    
+    console.log('Upload areas to set up:', uploadAreas.length);
+    
+    uploadAreas.forEach(area => {
+        console.log(`Setting up upload area: ${area.id}`);
+        const uploadArea = document.getElementById(area.id);
+        const input = document.getElementById(area.input);
+        const list = document.getElementById(area.list);
+        
+        if (!uploadArea) {
+            console.error(`Upload area ${area.id} not found`);
+            return;
+        }
+        if (!input) {
+            console.error(`Input ${area.input} not found`);
+            return;
+        }
+        if (!list) {
+            console.error(`List ${area.list} not found`);
+            return;
+        }
+        
+        console.log(`Upload area ${area.id} found, attaching listeners`);
+        
+        // Click to upload
+        uploadArea.addEventListener('click', () => {
+            console.log(`Upload area ${area.id} clicked`);
+            input.click();
+        });
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            console.log(`Files dropped on ${area.id}`);
+            handleFileSelect(e.dataTransfer.files, area.type, area.multiple, list);
+        });
+        
+        // File selection
+        input.addEventListener('change', (e) => {
+            console.log(`Files selected for ${area.id}:`, e.target.files.length);
+            handleFileSelect(e.target.files, area.type, area.multiple, list);
+        });
+    });
+    
+    console.log('File upload setup complete');
+}
+
+function handleFileSelect(files, documentType, multiple, listElement) {
+    const filesToProcess = multiple ? Array.from(files) : [files[0]];
+    
+    filesToProcess.forEach(file => {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            alert('File size must be less than 5MB');
+            return;
+        }
+        
+        // Store file data
+        if (!formData.documents[documentType]) {
+            formData.documents[documentType] = [];
+        }
+        
+        if (!multiple) {
+            formData.documents[documentType] = [];
+        }
+        
+        formData.documents[documentType].push(file);
+        
+        // Display file
+        displayFile(file, listElement, documentType);
+    });
+    
+    updateCompletionPercentage();
+}
+
+function displayFile(file, listElement, documentType) {
+    const fileItem = document.createElement('div');
+    fileItem.className = 'document-item fade-in';
+    
+    const fileInfo = document.createElement('div');
+    fileInfo.className = 'document-info';
+    
+    const icon = document.createElement('div');
+    icon.className = 'document-icon';
+    icon.innerHTML = getFileIcon(file.type);
+    
+    const details = document.createElement('div');
+    details.className = 'document-details';
+    
+    const name = document.createElement('div');
+    name.className = 'document-name';
+    name.textContent = file.name;
+    
+    const size = document.createElement('div');
+    size.className = 'document-size';
+    size.textContent = formatFileSize(file.size);
+    
+    details.appendChild(name);
+    details.appendChild(size);
+    fileInfo.appendChild(icon);
+    fileInfo.appendChild(details);
+    
+    const status = document.createElement('div');
+    status.className = 'document-status';
+    
+    const badge = document.createElement('span');
+    badge.className = 'status-badge uploaded';
+    badge.textContent = 'Uploaded';
+    status.appendChild(badge);
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn btn-sm btn-danger';
+    removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    removeBtn.onclick = () => removeFile(fileItem, documentType, file.name);
+    status.appendChild(removeBtn);
+    
+    fileItem.appendChild(fileInfo);
+    fileItem.appendChild(status);
+    listElement.appendChild(fileItem);
+}
+
+function getFileIcon(fileType) {
+    if (fileType.startsWith('image/')) {
+        return '<i class="fas fa-image"></i>';
+    } else if (fileType === 'application/pdf') {
+        return '<i class="fas fa-file-pdf"></i>';
+    } else {
+        return '<i class="fas fa-file"></i>';
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function removeFile(fileElement, documentType, fileName) {
+    fileElement.remove();
+    
+    // Remove from formData
+    if (formData.documents[documentType]) {
+        formData.documents[documentType] = formData.documents[documentType].filter(
+            file => file.name !== fileName
+        );
+    }
+    
+    updateCompletionPercentage();
+}
+
+// Collateral Management
+function addCollateral() {
+    console.log('addCollateral function called');
+    
+    const collateralIndex = formData.collaterals.length;
+    console.log('Adding collateral at index:', collateralIndex);
+    
+    const collateralHtml = `
+        <div class="collateral-card fade-in" id="collateral-${collateralIndex}">
+            <div class="collateral-header">
+                <span class="collateral-type">Collateral ${collateralIndex + 1}</span>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeCollateral(${collateralIndex})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Collateral Type <span class="required">*</span></label>
+                    <select class="form-control" name="collateral_type_${collateralIndex}" required>
+                        <option value="">Select Type</option>
+                        <option value="property">Property/Land</option>
+                        <option value="vehicle">Vehicle</option>
+                        <option value="logbook">Logbook</option>
+                        <option value="equipment">Equipment</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Estimated Value (KES) <span class="required">*</span></label>
+                    <input type="number" class="form-control" name="collateral_value_${collateralIndex}" min="0" step="1000" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Valuation Date <span class="required">*</span></label>
+                    <input type="date" class="form-control" name="collateral_valuation_date_${collateralIndex}" required>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label class="form-label">Description <span class="required">*</span></label>
+                    <textarea class="form-control" name="collateral_description_${collateralIndex}" rows="3" required placeholder="Describe the collateral in detail"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Location/Address</label>
+                    <input type="text" class="form-control" name="collateral_location_${collateralIndex}" placeholder="Where is the collateral located?">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Serial/Registration Number</label>
+                    <input type="text" class="form-control" name="collateral_serial_${collateralIndex}" placeholder="Vehicle chassis, logbook number, etc.">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Insurance Policy Number</label>
+                    <input type="text" class="form-control" name="collateral_insurance_${collateralIndex}" placeholder="Insurance policy if applicable">
+                </div>
+            </div>
+        </div>
+    `;
+    
+    console.log('Inserting collateral HTML');
+    document.getElementById('collateralContainer').insertAdjacentHTML('beforeend', collateralHtml);
+    
+    // Add to form data
+    formData.collaterals.push({});
+    console.log('Collateral added to formData, total collaterals:', formData.collaterals.length);
+    
+    updateCompletionPercentage();
+}
+
+function removeCollateral(index) {
+    document.getElementById(`collateral-${index}`).remove();
+    formData.collaterals.splice(index, 1);
+    
+    // Re-index remaining collaterals
+    document.querySelectorAll('.collateral-card').forEach((card, i) => {
+        card.id = `collateral-${i}`;
+        card.querySelector('.collateral-type').textContent = `Collateral ${i + 1}`;
+        card.querySelector('button').setAttribute('onclick', `removeCollateral(${i})`);
+    });
+    
+    updateCompletionPercentage();
+}
+
+// Guarantor Management
+function addGuarantor() {
+    console.log('addGuarantor function called');
+    
+    const guarantorIndex = formData.guarantors.length;
+    console.log('Adding guarantor at index:', guarantorIndex);
+    const guarantorHtml = `
+        <div class="guarantor-card fade-in" id="guarantor-${guarantorIndex}">
+            <div class="guarantor-header">
+                <div>
+                    <div class="guarantor-name">Guarantor ${guarantorIndex + 1}</div>
+                    <div class="guarantor-relation">Relationship: <span id="relation-display-${guarantorIndex}">Not specified</span></div>
+                </div>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeGuarantor(${guarantorIndex})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Full Name <span class="required">*</span></label>
+                    <input type="text" class="form-control" name="guarantor_name_${guarantorIndex}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">National ID Number <span class="required">*</span></label>
+                    <input type="text" class="form-control" name="guarantor_id_${guarantorIndex}" pattern="[0-9]{8}" maxlength="8" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Phone Number <span class="required">*</span></label>
+                    <input type="tel" class="form-control" name="guarantor_phone_${guarantorIndex}" pattern="07[0-9]{8}|2547[0-9]{8}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" name="guarantor_email_${guarantorIndex}">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Relationship to You <span class="required">*</span></label>
+                    <select class="form-control" name="guarantor_relationship_${guarantorIndex}" required onchange="updateGuarantorRelation(${guarantorIndex}, this.value)">
+                        <option value="">Select Relationship</option>
+                        <option value="family">Family Member</option>
+                        <option value="friend">Friend</option>
+                        <option value="colleague">Colleague</option>
+                        <option value="business">Business Partner</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Occupation</label>
+                    <input type="text" class="form-control" name="guarantor_occupation_${guarantorIndex}" placeholder="e.g., Teacher, Engineer, Business Owner">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Monthly Income (KES) <span class="required">*</span></label>
+                    <input type="number" class="form-control" name="guarantor_income_${guarantorIndex}" min="0" step="1000" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Years Known</label>
+                    <input type="number" class="form-control" name="guarantor_years_known_${guarantorIndex}" min="0" max="50">
+                </div>
+                
+                <div class="form-group full-width">
+                    <label class="form-label">Employment/Business Address <span class="required">*</span></label>
+                    <textarea class="form-control" name="guarantor_address_${guarantorIndex}" rows="2" required placeholder="Guarantor's work or business address"></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('guarantorContainer').insertAdjacentHTML('beforeend', guarantorHtml);
+    
+    // Add to form data
+    formData.guarantors.push({});
+    
+    updateCompletionPercentage();
+}
+
+function removeGuarantor(index) {
+    document.getElementById(`guarantor-${index}`).remove();
+    formData.guarantors.splice(index, 1);
+    
+    // Re-index remaining guarantors
+    document.querySelectorAll('.guarantor-card').forEach((card, i) => {
+        card.id = `guarantor-${i}`;
+        card.querySelector('.guarantor-name').textContent = `Guarantor ${i + 1}`;
+        card.querySelector('button').setAttribute('onclick', `removeGuarantor(${i})`);
+    });
+    
+    updateCompletionPercentage();
+}
+
+function updateGuarantorRelation(index, value) {
+    const displayElement = document.getElementById(`relation-display-${index}`);
+    if (displayElement) {
+        displayElement.textContent = value || 'Not specified';
+    }
+}
+
+// Summary Population
+function populateSummary() {
+    // Loan details
+    const amount = document.getElementById('loanAmount').value;
+    const duration = document.getElementById('loanDuration').value;
+    
+    document.getElementById('summaryLoanAmount').textContent = 'KES ' + parseFloat(amount).toLocaleString();
+    document.getElementById('summaryDuration').textContent = duration + ' months';
+    
+    if (document.getElementById('monthlyRepayment').textContent !== '-') {
+        document.getElementById('summaryMonthlyPayment').textContent = document.getElementById('monthlyRepayment').textContent;
+        document.getElementById('summaryInterestRate').textContent = document.getElementById('interestRate').textContent;
+        document.getElementById('summaryTotalRepayable').textContent = document.getElementById('totalRepayable').textContent;
+    }
+    
+    // Documents summary
+    const documentsSummary = document.getElementById('documentsSummary');
+    documentsSummary.innerHTML = '';
+    
+    Object.entries(formData.documents).forEach(([type, files]) => {
+        files.forEach(file => {
+            const docItem = document.createElement('div');
+            docItem.className = 'document-item';
+            docItem.innerHTML = `
+                <div class="document-info">
+                    <div class="document-icon">${getFileIcon(file.type)}</div>
+                    <div class="document-details">
+                        <div class="document-name">${file.name}</div>
+                        <div class="document-size">${formatFileSize(file.size)}</div>
+                    </div>
+                </div>
+                <div class="document-status">
+                    <span class="status-badge uploaded">Ready to upload</span>
+                </div>
+            `;
+            documentsSummary.appendChild(docItem);
+        });
+    });
+    
+    // Collateral summary
+    const collateralSummary = document.getElementById('collateralSummary');
+    collateralSummary.innerHTML = '';
+    
+    if (formData.collaterals.length > 0) {
+        formData.collaterals.forEach((collateral, index) => {
+            const type = document.querySelector(`select[name="collateral_type_${index}"]`)?.value || 'Not specified';
+            const value = document.querySelector(`input[name="collateral_value_${index}"]`)?.value || '0';
+            
+            const collateralItem = document.createElement('div');
+            collateralItem.className = 'collateral-card';
+            collateralItem.innerHTML = `
+                <div class="collateral-header">
+                    <span class="collateral-type">${type}</span>
+                    <span class="collateral-value">KES ${parseFloat(value).toLocaleString()}</span>
+                </div>
+            `;
+            collateralSummary.appendChild(collateralItem);
+        });
+    } else if (document.getElementById('noCollateral').checked) {
+        collateralSummary.innerHTML = '<p class="text-muted">No collateral provided</p>';
+    } else {
+        collateralSummary.innerHTML = '<p class="text-warning">No collateral added</p>';
+    }
+    
+    // Guarantor summary
+    const guarantorSummary = document.getElementById('guarantorSummary');
+    guarantorSummary.innerHTML = '';
+    
+    if (formData.guarantors.length > 0) {
+        formData.guarantors.forEach((guarantor, index) => {
+            const name = document.querySelector(`input[name="guarantor_name_${index}"]`)?.value || 'Not specified';
+            const relationship = document.querySelector(`select[name="guarantor_relationship_${index}"]`)?.value || 'Not specified';
+            const income = document.querySelector(`input[name="guarantor_income_${index}"]`)?.value || '0';
+            
+            const guarantorItem = document.createElement('div');
+            guarantorItem.className = 'guarantor-card';
+            guarantorItem.innerHTML = `
+                <div class="guarantor-header">
+                    <div>
+                        <div class="guarantor-name">${name}</div>
+                        <div class="guarantor-relation">${relationship} • Monthly Income: KES ${parseFloat(income).toLocaleString()}</div>
+                    </div>
+                </div>
+            `;
+            guarantorSummary.appendChild(guarantorItem);
+        });
+    } else if (document.getElementById('noGuarantor').checked) {
+        guarantorSummary.innerHTML = '<p class="text-muted">No guarantor provided</p>';
+    } else {
+        guarantorSummary.innerHTML = '<p class="text-warning">No guarantor added</p>';
+    }
+}
+
+// Form Submission
+function handleSubmit(e) {
+    console.log('Form submit triggered');
+    e.preventDefault();
+    
+    console.log('Validating current step...');
+    if (!validateCurrentStep()) {
+        console.log('Validation failed');
+        return;
+    }
+    
+    console.log('Validation passed, preparing submission...');
+    
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading-spinner"></span> Submitting...';
+    
+    // Create FormData for file uploads
+    const formData = new FormData(e.target);
+    
+    // Add documents
+    console.log('Adding documents to form data...');
+    Object.entries(window.formData.documents).forEach(([type, files]) => {
+        console.log(`Adding ${files.length} files for ${type}`);
+        files.forEach((file, index) => {
+            // Use the correct field name format expected by backend
+            if (index === 0) {
+                formData.append(type, file);  // First file with the field name
+            } else {
+                formData.append(`${type}_${index}`, file);  // Additional files with index
+            }
+        });
+    });
+    
+    console.log('Submitting form via AJAX...');
+    // Submit via AJAX
+    fetch(e.target.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Response received:', response);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            showSuccessMessage(data.message);
+            setTimeout(() => {
+                window.location.href = data.redirect_url;
+            }, 2000);
+        } else {
+            showErrorMessage(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('An error occurred while submitting your application. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Submit Application';
+    });
+}
+
+function showSuccessMessage(message) {
+    const alertHtml = `
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.querySelector('.loan-application-container').insertAdjacentHTML('afterbegin', alertHtml);
+}
+
+function showErrorMessage(message) {
+    const alertHtml = `
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.querySelector('.loan-application-container').insertAdjacentHTML('afterbegin', alertHtml);
+}
+</script>
+{% endblock %}

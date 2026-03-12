@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- User Groups -->
+    <record id="berit_loan_user" model="res.groups">
+        <field name="name">Berit Loan User</field>
+        <field name="comment">Can read/create loan applications, cannot approve</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="berit_loan_officer" model="res.groups">
+        <field name="name">Berit Loan Officer</field>
+        <field name="comment">Can create, edit, submit, request review</field>
+        <field name="implied_ids" eval="[(4, ref('berit_loan_user'))]"/>
+    </record>
+
+    <record id="berit_loan_manager" model="res.groups">
+        <field name="name">Berit Loan Manager</field>
+        <field name="comment">Can approve, reject, disburse, access all records</field>
+        <field name="implied_ids" eval="[(4, ref('berit_loan_officer'))]"/>
+    </record>
+
+    <record id="berit_loan_admin" model="res.groups">
+        <field name="name">Berit Loan Admin</field>
+        <field name="comment">Full access including configuration</field>
+        <field name="implied_ids" eval="[(4, ref('berit_loan_manager'))]"/>
+    </record>
+</odoo>
+    <!-- <record id="menu_berit_loan_configuration_access" model="ir.ui.menu">
+        <field name="groups_id" eval="[(6, 0, [ref('berit_loan_admin')])]"/>
+    </record> -->
+
+    <!-- Field Access Rules -->
+    <record id="rule_berit_loan_approval" model="ir.rule">
+        <field name="name">Berit Loan: Approval Actions</field>
+        <field name="model_id" ref="model_berit_loan_application"/>
+        <field name="domain_force">[('state', 'in', ['under_review'])]</field>
+        <field name="groups" eval="[(4, ref('berit_loan_manager')), (4, ref('berit_loan_admin'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

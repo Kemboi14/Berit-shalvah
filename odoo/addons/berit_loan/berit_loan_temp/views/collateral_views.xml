@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Collateral Form View -->
+    <record id="view_berit_collateral_form" model="ir.ui.view">
+        <field name="name">berit.collateral.form</field>
+        <field name="model">berit.collateral</field>
+        <field name="arch" type="xml">
+            <form string="Collateral">
+                <header>
+                    <button name="action_verify" string="Verify" type="object" states="unverified" class="btn-success" groups="berit_loan.berit_loan_officer"/>
+                    <button name="action_unverify" string="Unverify" type="object" states="verified" class="btn-warning" groups="berit_loan.berit_loan_officer"/>
+                    <field name="is_verified" widget="boolean_toggle"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="loan_id" readonly="1"/>
+                            <field name="collateral_type"/>
+                            <field name="description"/>
+                            <field name="estimated_value"/>
+                            <field name="valuation_date"/>
+                        </group>
+                        <group>
+                            <field name="location"/>
+                            <field name="serial_number"/>
+                            <field name="registration_number"/>
+                            <field name="insurance_policy"/>
+                            <field name="is_verified"/>
+                            <field name="verified_by" readonly="1"/>
+                            <field name="verified_date" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Documents">
+                        <field name="valuation_document" filename="valuation_document_name"/>
+                        <field name="valuation_document_name"/>
+                        <field name="ownership_proof" filename="ownership_proof_name"/>
+                        <field name="ownership_proof_name"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Collateral List View -->
+    <record id="view_berit_collateral_tree" model="ir.ui.view">
+        <field name="name">berit.collateral.tree</field>
+        <field name="model">berit.collateral</field>
+        <field name="arch" type="xml">
+            <tree string="Collaterals" decoration-success="is_verified">
+                <field name="loan_id"/>
+                <field name="collateral_type"/>
+                <field name="description"/>
+                <field name="estimated_value" widget="monetary"/>
+                <field name="valuation_date"/>
+                <field name="is_verified"/>
+                <field name="verified_by"/>
+                <field name="verified_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Collateral Search View -->
+    <record id="view_berit_collateral_search" model="ir.ui.view">
+        <field name="name">berit.collateral.search</field>
+        <field name="model">berit.collateral</field>
+        <field name="arch" type="xml">
+            <search string="Collaterals">
+                <field name="loan_id"/>
+                <field name="description"/>
+                <field name="location"/>
+                <filter string="Verified" name="verified" domain="[('is_verified', '=', True)]"/>
+                <filter string="Not Verified" name="not_verified" domain="[('is_verified', '=', False)]"/>
+                <separator/>
+                <filter string="Property" name="property" domain="[('collateral_type', '=', 'property')]"/>
+                <filter string="Vehicle" name="vehicle" domain="[('collateral_type', '=', 'vehicle')]"/>
+                <filter string="Logbook" name="logbook" domain="[('collateral_type', '=', 'logbook')]"/>
+                <filter string="Equipment" name="equipment" domain="[('collateral_type', '=', 'equipment')]"/>
+                <filter string="Other" name="other" domain="[('collateral_type', '=', 'other')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Collateral Type" name="group_type" context="{'group_by': 'collateral_type'}"/>
+                    <filter string="Loan" name="group_loan" context="{'group_by': 'loan_id'}"/>
+                    <filter string="Verification Status" name="group_verified" context="{'group_by': 'is_verified'}"/>
+                    <filter string="Valuation Date" name="group_valuation_date" context="{'group_by': 'valuation_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Collateral Action -->
+    <record id="action_berit_collateral" model="ir.actions.act_window">
+        <field name="name">Collaterals</field>
+        <field name="res_model">berit.collateral</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_berit_collateral_tree"/>
+        <field name="search_view_id" ref="view_berit_collateral_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No collaterals found
+            </p>
+            <p>
+                Collaterals are required for loan approval and must be verified by loan officers.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Share Document — Berit Shalvah{% endblock %}
+
+{% block content %}
+<div class="bs-content-with-sidebar">
+
+  <!-- Page Header -->
+  <div class="bs-page-header">
+    <div>
+      <h1><i class="fas fa-share-alt me-2 text-accent"></i>Share Document</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'documents:list' %}">Documents</a></li>
+          <li class="breadcrumb-item active">Share</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="p-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+
+        <!-- Document Info Card -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-3">
+              <div style="width:52px;height:52px;border-radius:var(--radius-lg);
+                          background:var(--gray-100);display:flex;align-items:center;
+                          justify-content:center;font-size:1.5rem;flex-shrink:0;">
+                <i class="fas fa-file-alt" style="color:var(--bs-primary);"></i>
+              </div>
+              <div>
+                <div style="font-weight:700;font-size:1rem;color:var(--gray-900);">
+                  {{ document.title }}
+                </div>
+                <div style="font-size:.8125rem;color:var(--gray-500);">
+                  {{ document.filename }} &nbsp;&middot;&nbsp; {{ document.get_file_size_mb }} MB
+                  &nbsp;&middot;&nbsp; Uploaded {{ document.uploaded_at|date:"d M Y" }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Current sharing status -->
+            <div class="mt-3 pt-3" style="border-top:1px solid var(--gray-100);">
+              {% if document.is_public %}
+              <span class="status-pill status-approved">
+                <i class="fas fa-globe-africa me-1"></i>Currently public
+              </span>
+              {% elif document.shared_with.exists %}
+              <span class="status-pill status-submitted">
+                <i class="fas fa-user-friends me-1"></i>
+                Shared with {{ document.shared_with.count }} user{{ document.shared_with.count|pluralize }}
+              </span>
+              {% else %}
+              <span class="status-pill status-draft">
+                <i class="fas fa-lock me-1"></i>Private — only visible to you
+              </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Share Form -->
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-share-alt me-2"></i>Sharing Settings
+          </div>
+          <div class="card-body">
+            <form method="post" novalidate>
+              {% csrf_token %}
+
+              <!-- Share with specific users -->
+              <div class="mb-4">
+                <label class="form-label" for="id_emails">
+                  Share with specific users
+                </label>
+                <input
+                  type="text"
+                  name="emails"
+                  id="id_emails"
+                  class="form-control"
+                  placeholder="Enter email addresses, comma-separated (e.g. alice@example.com, bob@example.com)"
+                >
+                <div class="form-text">
+                  Each user will be able to view and download this document.
+                  Only registered users with matching email addresses will be added.
+                </div>
+              </div>
+
+              <!-- Current shared-with list -->
+              {% if document.shared_with.exists %}
+              <div class="mb-4">
+                <div class="form-label">Currently shared with</div>
+                <div class="d-flex flex-wrap gap-2">
+                  {% for user in document.shared_with.all %}
+                  <span class="badge d-inline-flex align-items-center gap-2 py-2 px-3"
+                        style="background:var(--gray-100);color:var(--gray-700);
+                               font-weight:500;border-radius:var(--radius-md);">
+                    <i class="fas fa-user" style="opacity:.6;font-size:.75rem;"></i>
+                    {{ user.email }}
+                  </span>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Make public toggle -->
+              <div class="mb-4 p-3"
+                   style="background:var(--gray-50);border-radius:var(--radius-md);
+                          border:1px solid var(--gray-200);">
+                <div class="form-check form-switch d-flex align-items-start gap-3">
+                  <input
+                    class="form-check-input flex-shrink-0"
+                    type="checkbox"
+                    name="make_public"
+                    id="id_make_public"
+                    style="width:2.25rem;height:1.25rem;margin-top:.15rem;"
+                    {% if document.is_public %}checked{% endif %}
+                  >
+                  <label class="form-check-label" for="id_make_public">
+                    <div style="font-weight:600;color:var(--gray-800);">
+                      Make document public
+                    </div>
+                    <div style="font-size:.8125rem;color:var(--gray-500);margin-top:.2rem;">
+                      When enabled, all staff members and administrators can view
+                      and download this document. Uncheck to restrict access.
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="d-flex gap-2 mt-2">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-save me-2"></i>Update Sharing
+                </button>
+                <a href="{% url 'documents:list' %}" class="btn btn-outline-primary">
+                  <i class="fas fa-times me-2"></i>Cancel
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Info panel -->
+        <div class="alert alert-info mt-4">
+          <i class="fas fa-info-circle me-2"></i>
+          <strong>Note:</strong> Sharing a document does not give others permission
+          to edit or delete it — only to view and download it.
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

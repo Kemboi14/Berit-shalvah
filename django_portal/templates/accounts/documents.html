@@ -1,0 +1,662 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Documents — Berit Shalvah{% endblock %}
+{% block nav_documents %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dash-layout {
+        display: flex;
+        min-height: calc(100vh - 64px);
+    }
+    .dash-content {
+        flex: 1;
+        margin-left: 260px;
+        background: var(--gray-50);
+        min-height: calc(100vh - 64px);
+        display: flex;
+        flex-direction: column;
+    }
+    .dash-inner {
+        padding: 2rem;
+        flex: 1;
+    }
+
+    /* ── Page header ── */
+    .bs-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .bs-page-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin: 0;
+        letter-spacing: -.02em;
+    }
+    .bs-page-header .breadcrumb {
+        font-size: .8rem;
+        margin: .25rem 0 0;
+        padding: 0;
+        background: none;
+    }
+    .bs-page-header .breadcrumb-item + .breadcrumb-item::before { color: var(--gray-400); }
+    .bs-page-header .breadcrumb-item a { color: var(--bs-primary); text-decoration: none; }
+    .bs-page-header .breadcrumb-item.active { color: var(--gray-500); }
+
+    /* ── Category cards ── */
+    .cat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+    .cat-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-100);
+        padding: 1.375rem 1.25rem;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+        transition: var(--trans-base);
+        cursor: default;
+    }
+    .cat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .cat-icon {
+        width: 52px; height: 52px;
+        border-radius: var(--radius-lg);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: .875rem;
+    }
+    .cat-icon.navy { background: rgba(var(--bs-primary-rgb),.1); color: var(--bs-primary); }
+    .cat-icon.teal { background: rgba(13,148,136,.1); color: #0d9488; }
+    .cat-icon.gold { background: rgba(245,166,35,.1); color: var(--bs-accent); }
+    .cat-icon.sky  { background: rgba(14,165,233,.1); color: #0ea5e9; }
+    .cat-title {
+        font-size: .875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin-bottom: .2rem;
+    }
+    .cat-count {
+        font-size: .8rem;
+        color: var(--gray-500);
+    }
+
+    /* ── Main docs card ── */
+    .docs-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-100);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .docs-card-head {
+        padding: 1rem 1.375rem;
+        border-bottom: 1px solid var(--gray-100);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .docs-card-head h4 {
+        font-size: .9375rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+
+    /* ── Documents table ── */
+    .bs-table { width: 100%; border-collapse: collapse; }
+    .bs-table th {
+        font-size: .72rem;
+        font-weight: 700;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        padding: .6rem 1.125rem;
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-100);
+        white-space: nowrap;
+    }
+    .bs-table td {
+        padding: .9rem 1.125rem;
+        font-size: .875rem;
+        color: var(--gray-700);
+        border-bottom: 1px solid var(--gray-50);
+        vertical-align: middle;
+    }
+    .bs-table tbody tr:hover { background: var(--gray-50); }
+    .bs-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ── Doc name cell ── */
+    .doc-name-cell {
+        display: flex;
+        align-items: center;
+        gap: .875rem;
+    }
+    .doc-icon {
+        width: 36px; height: 36px;
+        border-radius: var(--radius-base);
+        background: rgba(var(--bs-primary-rgb),.08);
+        color: var(--bs-primary);
+        display: flex; align-items: center; justify-content: center;
+        font-size: .875rem;
+        flex-shrink: 0;
+    }
+    .doc-icon.pdf  { background: rgba(220,38,38,.08);  color: #dc2626; }
+    .doc-icon.img  { background: rgba(14,165,233,.08);  color: #0ea5e9; }
+    .doc-icon.word { background: rgba(59,130,246,.08);  color: #3b82f6; }
+    .doc-filename { font-weight: 600; color: var(--gray-800); font-size: .875rem; line-height: 1.3; }
+    .doc-desc     { font-size: .75rem; color: var(--gray-500); margin-top: .1rem; }
+
+    /* ── Status badge ── */
+    .doc-status {
+        display: inline-flex; align-items: center; gap: .3rem;
+        padding: .2rem .65rem;
+        border-radius: 100px;
+        font-size: .7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .04em;
+    }
+    .doc-status::before {
+        content: '';
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+    }
+    .status-verified   { background: #f0fdf4; color: #16a34a; }
+    .status-pending    { background: #fffbeb; color: #d97706; }
+    .status-rejected   { background: #fef2f2; color: #dc2626; }
+    .status-unsubmitted { background: #f8fafc; color: #94a3b8; }
+
+    /* ── Action buttons ── */
+    .doc-actions { display: flex; gap: .375rem; }
+    .icon-btn {
+        width: 30px; height: 30px;
+        border-radius: var(--radius-base);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: .75rem;
+        text-decoration: none;
+        border: 1px solid transparent;
+        cursor: pointer;
+        background: none;
+        transition: var(--trans-base);
+    }
+    .icon-btn.view   { background: rgba(var(--bs-primary-rgb),.08); color: var(--bs-primary); border-color: rgba(var(--bs-primary-rgb),.15); }
+    .icon-btn.view:hover { background: var(--bs-primary); color: #fff; }
+    .icon-btn.dl     { background: rgba(13,148,136,.08); color: #0d9488; border-color: rgba(13,148,136,.15); }
+    .icon-btn.dl:hover { background: #0d9488; color: #fff; }
+    .icon-btn.del    { background: rgba(220,38,38,.08); color: #dc2626; border-color: rgba(220,38,38,.15); }
+    .icon-btn.del:hover { background: #dc2626; color: #fff; }
+
+    /* ── Empty state ── */
+    .empty-state {
+        text-align: center;
+        padding: 3.5rem 1rem;
+    }
+    .empty-icon {
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        background: var(--gray-100);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+        color: var(--gray-400);
+        margin-bottom: 1.25rem;
+    }
+    .empty-state h4 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--gray-700);
+        margin-bottom: .375rem;
+    }
+    .empty-state p {
+        font-size: .875rem;
+        color: var(--gray-500);
+        margin-bottom: 1.5rem;
+    }
+
+    /* ── Upload zone (modal) ── */
+    .upload-zone {
+        border: 2px dashed var(--gray-200);
+        border-radius: var(--radius-lg);
+        padding: 2rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: var(--trans-base);
+        background: var(--gray-50);
+    }
+    .upload-zone:hover { border-color: var(--bs-primary); background: rgba(var(--bs-primary-rgb),.03); }
+    .upload-zone.dragover { border-color: var(--bs-primary); background: rgba(var(--bs-primary-rgb),.05); }
+    .upload-zone i { font-size: 2rem; color: var(--gray-400); margin-bottom: .75rem; display: block; }
+    .upload-zone p { font-size: .875rem; color: var(--gray-500); margin: 0; }
+    .upload-zone small { font-size: .75rem; color: var(--gray-400); }
+
+    /* ── Modal overrides ── */
+    .modal-content { border-radius: var(--radius-xl); border: 1px solid var(--gray-100); box-shadow: var(--shadow-xl); }
+    .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-100); }
+    .modal-header .modal-title { font-size: 1rem; font-weight: 700; color: var(--gray-900); }
+    .modal-body { padding: 1.375rem 1.5rem; }
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--gray-100); }
+
+    @media (max-width: 1199.98px) { .cat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 991.98px)  { .dash-content { margin-left: 0; } .dash-inner { padding: 1.25rem; } }
+    @media (max-width: 575.98px)  { .cat-grid { grid-template-columns: repeat(2, 1fr); gap: .75rem; } }
+</style>
+{% endblock %}
+
+{% block full_content %}
+<div class="dash-layout">
+
+    <!-- ══════ SIDEBAR ══════ -->
+    <aside class="bs-sidebar" id="bsSidebar">
+        <div class="sidebar-user">
+            <div class="avatar">
+                {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+            </div>
+            <div style="min-width:0;">
+                <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                <div class="user-role">Client Account</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section-title">Main</div>
+        <nav>
+            <a href="{% url 'dashboard:home' %}" class="nav-link">
+                <i class="fas fa-th-large"></i>Dashboard
+            </a>
+            <a href="{% url 'loans:modern_application' %}" class="nav-link">
+                <i class="fas fa-plus-circle"></i>Apply for Loan
+            </a>
+            <a href="{% url 'loans:application_list' %}" class="nav-link">
+                <i class="fas fa-file-contract"></i>My Loans
+            </a>
+        </nav>
+
+        <div class="sidebar-section-title">Account</div>
+        <nav>
+            <a href="{% url 'accounts:profile' %}" class="nav-link">
+                <i class="fas fa-user"></i>My Profile
+            </a>
+            <a href="{% url 'accounts:documents' %}" class="nav-link active">
+                <i class="fas fa-folder"></i>My Documents
+            </a>
+            <a href="{% url 'accounts:settings' %}" class="nav-link">
+                <i class="fas fa-cog"></i>Settings
+            </a>
+        </nav>
+
+        {% if request.user.is_staff %}
+        <div class="sidebar-section-title">Administration</div>
+        <nav>
+            <a href="{% url 'dashboard:staff' %}" class="nav-link">
+                <i class="fas fa-users-cog"></i>Staff Dashboard
+            </a>
+            <a href="{% url 'admin:index' %}" class="nav-link">
+                <i class="fas fa-tools"></i>Django Admin
+            </a>
+        </nav>
+        {% endif %}
+
+        <hr>
+        <nav>
+            <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="nav-link" style="color:rgba(255,100,100,.7);background:none;border:none;width:100%;text-align:left;cursor:pointer;padding:0;"><i class="fas fa-sign-out-alt"></i>Sign Out</button></form>
+        </nav>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- ══════ MAIN CONTENT ══════ -->
+    <div class="dash-content">
+
+        <!-- Mobile top bar -->
+        <div class="d-lg-none d-flex align-items-center justify-content-between px-3 py-2"
+             style="background:#fff;border-bottom:1px solid var(--gray-200);">
+            <button onclick="openSidebar()" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span style="font-weight:700;font-size:.9rem;color:var(--gray-900);">My Documents</span>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="fas fa-upload"></i>
+            </button>
+        </div>
+
+        <div class="dash-inner">
+
+            <!-- Page Header -->
+            <div class="bs-page-header">
+                <div>
+                    <h1><i class="fas fa-folder-open me-2" style="color:var(--bs-primary);font-size:1.2rem;"></i>My Documents</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Documents</li>
+                        </ol>
+                    </nav>
+                </div>
+                <button class="btn btn-primary d-none d-lg-inline-flex align-items-center gap-2"
+                        data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="fas fa-upload"></i> Upload Document
+                </button>
+            </div>
+
+            <!-- ── Category summary cards ── -->
+            <div class="cat-grid">
+                <div class="cat-card">
+                    <div class="cat-icon navy"><i class="fas fa-id-card"></i></div>
+                    <div class="cat-title">Identity</div>
+                    <div class="cat-count">{{ identity_docs|default:0 }} file{{ identity_docs|default:0|pluralize }}</div>
+                </div>
+                <div class="cat-card">
+                    <div class="cat-icon teal"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div class="cat-title">Financial</div>
+                    <div class="cat-count">{{ financial_docs|default:0 }} file{{ financial_docs|default:0|pluralize }}</div>
+                </div>
+                <div class="cat-card">
+                    <div class="cat-icon gold"><i class="fas fa-home"></i></div>
+                    <div class="cat-title">Property</div>
+                    <div class="cat-count">{{ property_docs|default:0 }} file{{ property_docs|default:0|pluralize }}</div>
+                </div>
+                <div class="cat-card">
+                    <div class="cat-icon sky"><i class="fas fa-file-alt"></i></div>
+                    <div class="cat-title">Other</div>
+                    <div class="cat-count">{{ other_docs|default:0 }} file{{ other_docs|default:0|pluralize }}</div>
+                </div>
+            </div>
+
+            <!-- ── Documents table ── -->
+            <div class="docs-card">
+                <div class="docs-card-head">
+                    <h4></h4><i class="fas fa-list me-2" style="color:var(--bs-primary);font-size:.875rem;"></i>All Documents</h4>
+                    {% if documents %}
+                    <span style="font-size:.8rem;color:var(--gray-500);">{{ documents|length }} document{{ documents|length|pluralize }}</span>
+                    {% endif %}
+                </div>
+
+                {% if documents %}
+                <div style="overflow-x:auto;">
+                    <table class="bs-table">
+                        <thead>
+                            <tr>
+                                <th>Document</th>
+                                <th>Type</th>
+                                <th>Category</th>
+                                <th>Uploaded</th></th>
+                                <th>Size</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for document in documents %}
+                            <tr>
+                                <td>
+                                    <div class="doc-name-cell">
+                                        <div class="doc-icon
+                                            {% if document.mime_type == 'application/pdf' %}pdf
+                                            {% elif document.mime_type|slice:":6" == 'image/' %}img
+                                            {% else %}word{% endif %}">
+                                            <i class="fas
+                                                {% if document.mime_type == 'application/pdf' %}fa-file-pdf
+                                                {% elif document.mime_type|slice:":6" == 'image/' %}fa-file-image
+                                                {% else %}fa-file-alt{% endif %}">
+                                            </i>
+                                        </div>
+                                        <div>
+                                            <div class="doc-filename">{{ document.filename|default:document.name }}</div>
+                                            {% if document.description %}
+                                            <div class="doc-desc">{{ document.description }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="font-size:.8rem;font-weight:600;color:var(--gray-700);">
+                                        {{ document.document_type|cut:"_"|title }}
+                                    </span>
+                                </td>
+                                <td style="color:var(--gray-600);">{{ document.category|title|default:"Other" }}</td>
+                                <td style="color:var(--gray-500);">{{ document.uploaded_at|date:"M d, Y" }}</td>
+                                <td style="color:var(--gray-500);">{{ document.size|default:"—" }}</td>
+                                <td>
+                                    {% if document.verification_status == 'VERIFIED' %}
+                                        <span class="doc-status status-verified">Verified</span>
+                                    {% elif document.verification_status == 'PENDING' %}
+                                        <span class="doc-status status-pending">Pending</span>
+                                    {% elif document.verification_status == 'REJECTED' %}
+                                        <span class="doc-status status-rejected">Rejected</span>
+                                    {% else %}
+                                        <span class="doc-status status-unsubmitted">Not Submitted</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="doc-actions">
+                                        {% if document.file %}
+                                        <a href="{{ document.file.url }}" class="icon-btn view" target="_blank" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ document.file.url }}" class="icon-btn dl" download title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% endif %}
+                                        <button class="icon-btn del" onclick="deleteDocument({{ document.id }})" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
+                    <h4>No documents uploaded yet</h4>
+                    <p>Upload your identity, financial, and property documents to speed up your loan applications.</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="fas fa-upload me-2"></i>Upload Your First Document
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+
+        </div><!-- /dash-inner -->
+    </div><!-- /dash-content -->
+</div><!-- /dash-layout -->
+
+<!-- ══════ UPLOAD MODAL ══════ -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadModalLabel">
+                    <i class="fas fa-upload me-2" style="color:var(--bs-primary);"></i>Upload Document
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+                <div class="modal-body">
+
+                    <!-- Upload zone -->
+                    <div class="upload-zone mb-4" id="uploadZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p><strong>Click to browse</strong> or drag</p> &amp; drop your file here</p>
+                        <small>PDF, JPG, PNG, DOC, DOCX — max</small> 20 MB</small>
+                        <input type="file" id="documentFile" name="file"
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                               style="position:absolute;opacity:0;inset:0;cursor:pointer;"
+                               required>
+                    </div>
+                    <div id="filePreview" style="display:none;margin-top:-.5rem;margin-bottom:1rem;">
+                        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:var(--gray-50);border-radius:var(--radius-base);border:1px solid var(--gray-100);">
+                            <i class="fas fa-file-alt" style="color:var(--bs-primary);font-size:1.125rem;"></i>
+                            <div style="min-width:0;">
+                                <div id="fileName" style="font-weight:600;font-size:.875rem;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                                <div id="fileSize" style="font-size:.75rem;color:var(--gray-500);"></div>
+                            </div>
+                            <button type="button" onclick="clearFile()" style="margin-left:auto;background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.875rem;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="documentType" class="form-label">Document Type <span style="color:#e53e3e;">*</span></label>
+                        <select class="form-select" id="documentType" name="document_type" required>
+                            <option value="">Select document type…</option>
+                            <option value="national_id">National ID</option>
+                            <option value="kra_pin">KRA PIN Certificate</option>
+                            <option value="passport">Passport</option>
+                            <option value="driving_license">Driving License</option>
+                            <option value="payslip">Payslip</option>
+                            <option value="bank_statement">Bank Statement</option>
+                            <option value="mpesa_statement">M-Pesa Statement</option>
+                            <option value="land_title">Land Title</option>
+                            <option value="vehicle_logbook">Vehicle Logbook</option>
+                            <option value="business_license">Business License</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="documentCategory" class="form-label">Category</label>
+                        <select class="form-select" id="documentCategory" name="category">
+                            <option value="identity">Identity</option>
+                            <option value="financial">Financial</option>
+                            <option value="property">Property</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-0">
+                        <label for="documentDescription" class="form-label">Description <span style="color:var(--gray-400);font-weight:400;font-size:.8rem;">(optional)</span></label>
+                        <textarea class="form-control" id="documentDescription" name="description" rows="2"
+                                  placeholder="Brief note about this document…"></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
+                            style="background:var(--gray-100);color:var(--gray-700);border-radius:var(--radius-base);">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="uploadSubmitBtn"
+                            style="border-radius:var(--radius-base);">
+                        <i class="fas fa-upload me-1"></i>Upload Document
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Sidebar ── */
+function openSidebar() {
+    document.getElementById('bsSidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('show');
+}
+function closeSidebar() {
+    document.getElementById('bsSidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+/* ── File input / drag-drop ── */
+const uploadZone = document.getElementById('uploadZone');
+const fileInput  = document.getElementById('documentFile');
+const filePreview = document.getElementById('filePreview');
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) {
+        fileInput.files = e.dataTransfer.files;
+        showFilePreview(e.dataTransfer.files[0]);
+    }
+});
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) showFilePreview(fileInput.files[0]);
+});
+
+function showFilePreview(file) {
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatBytes(file.size);
+    filePreview.style.display = 'block';
+    uploadZone.querySelector('p').innerHTML = '<strong>File selected</strong> — click to change';
+}
+
+function clearFile() {
+    fileInput.value = '';
+    filePreview.style.display = 'none';
+    uploadZone.querySelector('p').innerHTML = '<strong>Click to browse</strong> or drag & drop your file here';
+}
+
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(2) + ' MB';
+}
+
+/* ── Upload form ── */
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData  = new FormData(this);
+    const submitBtn = document.getElementById('uploadSubmitBtn');
+    const orig = submitBtn.innerHTML;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Uploading…';
+
+    fetch('{% url "accounts:upload_document" %}', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to upload document'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = orig;
+        }
+    })
+    .catch(() => {
+        alert('An error occurred. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = orig;
+    });
+});
+
+/* ── Delete ── */
+function deleteDocument(documentId) {
+    if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) return;
+
+    fetch('{% url "accounts:delete_document" 0 %}'.replace('0', documentId), {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to delete document'));
+        }
+    })
+    .catch(() => alert('An error occurred. Please try again.'));
+}
+</script>
+{% endblock %}

@@ -1,0 +1,151 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16
+    container_name: berit_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: ${ODOO_DB},${PORTAL_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-multiple-db.sh:/docker-entrypoint-initdb.d/init-multiple-db.sh
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: berit_redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  odoo:
+    build:
+      context: ./odoo
+      dockerfile: Dockerfile
+    container_name: berit_odoo
+    depends_on:
+      - db
+      - redis
+    environment:
+      ODOO_DB_HOST: db
+      ODOO_DB_PORT: 5432
+      ODOO_DB_USER: ${POSTGRES_USER}
+      ODOO_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ODOO_DB_NAME: ${ODOO_DB}
+      ODOO_MASTER_PASSWORD: ${ODOO_MASTER_PASSWORD}
+      REDIS_URL: ${REDIS_URL}
+    volumes:
+      - ./odoo/addons:/mnt/extra-addons
+      - odoo_data:/var/lib/odoo
+      - ./odoo/odoo.conf:/etc/odoo/odoo.conf
+    ports:
+      - "8069:8069"
+      - "8072:8072"
+    restart: unless-stopped
+
+  django:
+    build:
+      context: ./django_portal
+      dockerfile: Dockerfile
+    container_name: berit_django
+    depends_on:
+      - db
+      - redis
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${PORTAL_DB}
+      REDIS_URL: ${REDIS_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      PORTAL_BASE_URL: ${PORTAL_BASE_URL}
+    volumes:
+      - ./django_portal:/app
+      - django_media:/app/media
+      - django_static:/app/staticfiles
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  celery:
+    build:
+      context: ./django_portal
+      dockerfile: Dockerfile.celery
+    container_name: berit_celery
+    depends_on:
+      - db
+      - redis
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${PORTAL_DB}
+      REDIS_URL: ${REDIS_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      PORTAL_BASE_URL: ${PORTAL_BASE_URL}
+    volumes:
+      - ./django_portal:/app
+      - django_media:/app/media
+    restart: unless-stopped
+    command: celery -A config worker -l info
+
+  celerybeat:
+    build:
+      context: ./django_portal
+      dockerfile: Dockerfile.celerybeat
+    container_name: berit_celerybeat
+    depends_on:
+      - db
+      - redis
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${PORTAL_DB}
+      REDIS_URL: ${REDIS_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      PORTAL_BASE_URL: ${PORTAL_BASE_URL}
+    volumes:
+      - ./django_portal:/app
+    restart: unless-stopped
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+  nginx:
+    image: nginx:alpine
+    container_name: berit_nginx
+    depends_on:
+      - odoo
+      - django
+    volumes:
+      - ./nginx/nginx.docker.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - django_static:/var/www/django/static
+      - django_media:/var/www/django/media
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  odoo_data:
+  django_media:
+  django_static:
+
+networks:
+  default:
+    driver: bridge

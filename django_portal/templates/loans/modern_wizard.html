@@ -1,0 +1,1042 @@
+{% extends 'berit/base.html' %}
+{% load static %}
+
+{% block title %}Apply for Loan - Berit Shalvah{% endblock %}
+
+{% block extra_css %}
+<style>
+  [x-cloak] { display: none !important; }
+
+  .step-circle {
+    width: 2.5rem; height: 2.5rem;
+    border-radius: 9999px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: .875rem;
+    transition: all .3s;
+  }
+  .step-circle.done   { background:#7c3aed; color:#fff; }
+  .step-circle.active { background:#7c3aed; color:#fff; box-shadow:0 0 0 4px #ede9fe; }
+  .step-circle.todo   { background:#e5e7eb; color:#6b7280; }
+
+  .connector { flex:1; height:2px; margin:0 .25rem; transition:background .3s; }
+  .connector.done { background:#7c3aed; }
+  .connector.todo { background:#e5e7eb; }
+
+  .form-input {
+    width:100%; padding:.625rem 1rem;
+    border:1px solid #d1d5db; border-radius:.5rem;
+    font-size:.875rem; transition:border-color .2s, box-shadow .2s;
+  }
+  .form-input:focus { outline:none; border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,.15); }
+  .form-input.error { border-color:#ef4444; }
+
+  .btn-primary {
+    padding:.625rem 1.5rem; background:#7c3aed; color:#fff;
+    border-radius:.5rem; font-weight:600; font-size:.875rem;
+    transition:background .2s, box-shadow .2s;
+    cursor:pointer; border:none;
+  }
+  .btn-primary:hover:not(:disabled) { background:#6d28d9; box-shadow:0 4px 12px rgba(124,58,237,.4); }
+  .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+
+  .btn-secondary {
+    padding:.625rem 1.5rem; background:#f3f4f6; color:#374151;
+    border-radius:.5rem; font-weight:600; font-size:.875rem;
+    transition:background .2s; cursor:pointer; border:none;
+  }
+  .btn-secondary:hover { background:#e5e7eb; }
+
+  .upload-zone {
+    border:2px dashed #d1d5db; border-radius:.75rem;
+    padding:1.5rem; text-align:center;
+    transition:border-color .2s, background .2s; cursor:pointer;
+  }
+  .upload-zone:hover  { border-color:#7c3aed; background:#faf5ff; }
+  .upload-zone.has-file { border-color:#059669; background:#f0fdf4; }
+
+  .card-item {
+    border:1px solid #e5e7eb; border-radius:.75rem; padding:1rem;
+    background:#fff;
+  }
+
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .spinner { animation:spin 1s linear infinite; display:inline-block; }
+
+  .fade-in { animation:fadeIn .3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="loanWizard()" x-cloak class="min-h-screen bg-gray-50 py-10">
+  <div class="max-w-3xl mx-auto px-4">
+
+    <!-- ── Header ── -->
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Loan Application</h1>
+      <p class="text-gray-500 mt-1">Complete all steps to submit your application</p>
+    </div>
+
+    <!-- ── Step Progress Bar ── -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <template x-for="(label, i) in steps" :key="i">
+          <div class="flex items-center" :class="i < steps.length-1 ? 'flex-1' : ''">
+            <div class="flex flex-col items-center">
+              <div class="step-circle"
+                   :class="i+1 < currentStep ? 'done' : i+1 === currentStep ? 'active' : 'todo'">
+                <template x-if="i+1 < currentStep">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                </template>
+                <template x-if="i+1 >= currentStep">
+                  <span x-text="i+1"></span>
+                </template>
+              </div>
+              <span class="text-xs mt-1 font-medium hidden sm:block"
+                    :class="i+1 <= currentStep ? 'text-purple-700' : 'text-gray-400'"
+                    x-text="label"></span>
+            </div>
+            <template x-if="i < steps.length-1">
+              <div class="connector" :class="i+1 < currentStep ? 'done' : 'todo'"></div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ── Form Card ── -->
+    <div class="bg-white rounded-2xl shadow-md p-8">
+      <form @submit.prevent id="loanForm" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- ════════════════════════════════════════════
+             STEP 1 — Loan Details
+        ════════════════════════════════════════════ -->
+        <div x-show="currentStep===1" class="fade-in space-y-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Step 1: Loan Details</h2>
+            <p class="text-sm text-gray-500 mt-1">Tell us how much you need</p>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Loan Amount (KES) *</label>
+              <input type="number" x-model.number="f.loan_amount" @input="calcLoan()"
+                     min="1000" max="10000000" step="1000" placeholder="e.g. 50000"
+                     :class="errors.loan_amount ? 'form-input error' : 'form-input'" />
+              <p class="text-xs text-red-500 mt-1" x-show="errors.loan_amount" x-text="errors.loan_amount"></p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Duration (Months) *</label>
+              <select x-model.number="f.loan_duration_months" @change="calcLoan()"
+                      :class="errors.loan_duration_months ? 'form-input error' : 'form-input'">
+                <option value="">Select duration</option>
+                <option value="3">3 months</option>
+                <option value="6">6 months</option>
+                <option value="9">9 months</option>
+                <option value="12">12 months</option>
+                <option value="18">18 months</option>
+                <option value="24">24 months</option>
+                <option value="36">36 months</option>
+                <option value="48">48 months</option>
+                <option value="60">60 months</option>
+              </select>
+              <p class="text-xs text-red-500 mt-1" x-show="errors.loan_duration_months" x-text="errors.loan_duration_months"></p>
+            </div>
+          </div>
+
+          <div></div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Loan Purpose *</label>
+            <textarea x-model="f.loan_purpose" rows="3" placeholder="Describe what you will use the loan for…"
+                      :class="errors.loan_purpose ? 'form-input error' : 'form-input'"></textarea>
+            <p class="text-xs text-red-500 mt-1" x-show="errors.loan_purpose" x-text="errors.loan_purpose"></p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Employment Type *</label>
+            <select x-model="f.employment_type"
+                    :class="errors.employment_type ? 'form-input error' : 'form-input'">
+              <option value="">Select type</option>
+              <option value="employed">Employed (Salary)</option>
+              <option value="self_employed">Self-Employed</option>
+              <option value="business_owner">Business Owner</option>
+              <option value="student">Student</option>
+              <option value="unemployed">Unemployed</option>
+            </select>
+            <p class="text-xs text-red-500 mt-1" x-show="errors.employment_type" x-text="errors.employment_type"></p>
+          </div>
+
+          <!-- Loan summary card -->
+          <div x-show="calc.monthlyPayment > 0"
+               class="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-5">
+            <h3 class="font-semibold text-gray-800 mb-3">Loan Summary</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+              <div>
+                <p class="text-xs text-gray-500">Amount</p>
+                <p class="font-bold text-purple-700">KES <span x-text="fmt(f.loan_amount)"></span></p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">Rate (annual)</p>
+                <p class="font-bold text-purple-700"><span x-text="calc.rate"></span>%</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">Monthly Payment</p>
+                <p class="font-bold text-green-700">KES <span x-text="fmt(calc.monthlyPayment)"></span></p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">Total Repayable</p>
+                <p class="font-bold text-blue-700">KES <span x-text="fmt(calc.totalRepayable)"></span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════
+             STEP 2 — Personal Information
+        ════════════════════════════════════════════ -->
+        <div x-show="currentStep===2" class="fade-in space-y-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Step 2: Personal Information</h2>
+            <p class="text-sm text-gray-500 mt-1">Verify your identity details</p>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">First Name *</label>
+              <input type="text" x-model="f.first_name" placeholder="First name"
+                     :class="errors.first_name ? 'form-input error' : 'form-input'" />
+              <p class="text-xs text-red-500 mt-1" x-show="errors.first_name" x-text="errors.first_name"></p>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Last Name *</label>
+              <input type="text" x-model="f.last_name" placeholder="Last name"
+                     :class="errors.last_name ? 'form-input error' : 'form-input'" />
+              <p class="text-xs text-red-500 mt-1" x-show="errors.last_name" x-text="errors.last_name"></p>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">National ID / Passport *</label>
+              <input type="text" x-model="f.national_id" placeholder="e.g. 12345678"
+                     :class="errors.national_id ? 'form-input error' : 'form-input'" />
+              <p class="text-xs text-red-500 mt-1" x-show="errors.national_id" x-text="errors.national_id"></p>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Phone Number *</label>
+              <input type="tel" x-model="f.phone_number" placeholder="+254700""000000"
+                     :class="errors.phone_number ? 'form-input error' : 'form-input'" />
+              <p class="text-xs text-red-500 mt-1" x-show="errors.phone_number" x-text="errors.phone_number"></p>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Email Address *</label>
+            <input type="email" x-model="f.email" placeholder="you@example.com"
+                   :class="errors.email ? 'form-input error' : 'form-input'" />
+            <p class="text-xs text-red-500 mt-1" x-show="errors.email" x-text="errors.email"></p>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════
+             STEP 3 — Employment Details
+        ════════════════════════════════════════════ -->
+        <div x-show="currentStep===3" class="fade-in space-y-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Step 3: Employment Details</h2>
+            <p class="text-sm text-gray-500 mt-1">Tell us about your income source</p>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Employer / Company Name</label>
+              <input type="text" x-model="f.employer_name" placeholder="Company name" class="form-input" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Job Title / Position</label>
+              <input type="text" x-model="f.job_title" placeholder="Your position" class="form-input" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Monthly Income (KES) *</label>
+              <input type="number" x-model.number="f.monthly_income" placeholder="e.g. 50000" min="0"
+                     :class="errors.monthly_income ? 'form-input error' : 'form-input'" />
+              <p class="text-xs text-red-500 mt-1" x-show="errors.monthly_income" x-text="errors.monthly_income"></p>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Employment Duration (Years) *</label>
+              <input type="number" x-model.number="f.employment_duration_years" placeholder="e.g. 2.5" min="0" step="0.1"
+                     :class="errors.employment_duration_years ? 'form-input error' : 'form-input'" />
+              <p class="text-xs text-red-500 mt-1" x-show="errors.employment_duration_years" x-text="errors.employment_duration_years"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════
+             STEP 4 — Supporting Documents
+        ════════════════════════════════════════════ -->
+        <div x-show="currentStep===4" class="fade-in space-y-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Step 4: Supporting Documents</h2>
+            <p class="text-sm text-gray-500 mt-1">Upload required verification files (PDF / JPG / PNG, max 5 MB each)</p>
+          </div>
+
+          <!-- ID Copy -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">National ID / Passport Copy *</label>
+            <label :class="files.id_copy ? 'upload-zone has-file' : 'upload-zone'" class="block cursor-pointer">
+              <input type="file" @change="handleFile('id_copy',$event)" accept=".pdf,.jpg,.jpeg,.png" class="hidden" />
+              <template x-if="!files.id_copy">
+                <div>
+                  <svg</div> class="mx-auto h-10 w-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                  </svg>
+                  <p class="text-sm font-medium text-gray-600">Click to upload ID / Passport</p>
+                  <p class="text-xs text-gray-400 mt-1">PDF, JPG or PNG up to 5 MB</p>
+                </div>
+              </template>
+              <template x-if="files.id_copy">
+                <div class="flex items-center justify-center gap-2 text-green-700">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                  <span class="text-sm font-medium" x-text="files.id_copy.name"></span>
+                  <button type="button" @click.stop="files.id_copy=null" class="text-red-400 hover:text-red-600 ml-2 text-xs">(remove)</button>
+                </div>
+              </template>
+            </label>
+            <p class="text-xs text-red-500 mt-1" x-show="errors.id_copy" x-text="errors.id_copy"></p>
+          </div>
+
+          <!-- Payslip -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Recent Payslip / Income Proof *</label>
+            <label :class="files.payslip ? 'upload-zone has-file' : 'upload-zone'" class="block cursor-pointer">
+              <input type="file" @change="handleFile('payslip',$event)" accept=".pdf,.jpg,.jpeg,.png" class="hidden" />
+              <template x-if="!files.payslip">
+                <div>
+                  <svg class="mx-auto h-10 w-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  <p class="text-sm font-medium text-gray-600">Click to upload Payslip / Proof of Income</p>
+                  <p class="text-xs text-gray-400 mt-1">PDF, JPG or PNG up to 5 MB</p>
+                </div>
+              </template>
+              <template x-if="files.payslip">
+                <div class="flex items-center justify-center gap-2 text-green-700">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                  <span class="text-sm font-medium" x-text="files.payslip.name"></span>
+                  <button type="button" @click.stop="files.payslip=null" class="text-red-400 hover:text-red-600 ml-2 text-xs">(remove)</button>
+                </div>
+              </template>
+            </label>
+            <p class="text-xs text-red-500 mt-1" x-show="errors.payslip" x-text="errors.payslip"></p>
+          </div>
+
+          <!-- KRA PIN (optional) -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">KRA PIN Certificate <span class="font-normal text-gray-400">(optional)</span></label>
+            <label :class="files.kra_pin ? 'upload-zone has-file' : 'upload-zone'" class="block cursor-pointer">
+              <input type="file" @change="handleFile('kra_pin',$event)" accept=".pdf,.jpg,.jpeg,.png" class="hidden" />
+              <template x-if="!files.kra_pin">
+                <div>
+                  <svg class="mx-auto h-10 w-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                  </svg>
+                  <p class="text-sm font-medium text-gray-600">Click to upload KRA PIN Certificate</p>
+                  <p class="text-xs text-gray-400 mt-1">PDF, JPG or PNG up to 5 MB</p>
+                </div>
+              </template>
+              <template x-if="files.kra_pin">
+                <div class="flex items-center justify-center gap-2 text-green-700">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                  <span class="text-sm font-medium" x-text="files.kra_pin.name"></span>
+                  <button type="button" @click.stop="files.kra_pin=null" class="text-red-400 hover:text-red-600 ml-2 text-xs">(remove)</button>
+                </div>
+              </template>
+            </label>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════
+             STEP 5 — Collateral
+        ════════════════════════════════════════════ -->
+        <div x-show="currentStep===5" class="fade-in space-y-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Step 5: Collateral</h2>
+            <p class="text-sm text-gray-500 mt-1">Add at least one asset as security for the loan</p>
+          </div>
+
+          <!-- Existing collateral items -->
+          <template x-if="collaterals.length > 0">
+            <div class="space-y-3">
+              <template x-for="(c, ci) in collaterals" :key="ci">
+                <div class="card-item flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-gray-800 capitalize" x-text="c.collateral_type.replace('_',' ')"></p>
+                    <p class="text-sm text-gray-500 truncate" x-text="c.description"></p>
+                    <p class="text-sm text-purple-700 font-medium mt-1">KES <span x-text="fmt(c.estimated_value)"></span></p>
+                  </div>
+                  <button type="button" @click="removeCollateral(ci)"
+                          class="text-red-400 hover:text-red-600 shrink-0 text-sm font-medium">Remove</button>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Add collateral form -->
+          <div class="border border-gray-200 rounded-xl p-5 bg-gray-50 space-y-4">
+            <h3 class="font-semibold text-gray-700 text-sm">Add Collateral Item</h3>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Collateral Type *</label>
+                <select x-model="newCollateral.collateral_type" class="form-input">
+                  <option value="">Select type</option>
+                  <option value="property">Property</option>
+                  <option value="vehicle">Vehicle</option>
+                  <option value="logbook">Logbook</option>
+                  <option value="equipment">Equipment</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Estimated Value (KES) *</label>
+                <input type="number" x-model.number="newCollateral.estimated_value" min="0" step="1000"
+                       placeholder="e.g. 500000" class="form-input" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Valuation Date *</label>
+                <input type="date" x-model="newCollateral.valuation_date" class="form-input" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Location / Address</label>
+                <input type="text" x-model="newCollateral.location" placeholder="e.g. Nairobi, Westlands" class="form-input" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Description *</label>
+                <textarea x-model="newCollateral.description" rows="2"
+                          placeholder="Describe the collateral asset…" class="form-input"></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Ownership Document</label>
+                <label class="upload-zone block cursor-pointer py-3" :class="newCollateral.ownership_proof ? 'has-file' : ''">
+                  <input type="file" @change="handleCollateralFile('ownership_proof',$event)"
+                         accept=".pdf,.jpg,.jpeg,.png" class="hidden" />
+                  <template x-if="!newCollateral.ownership_proof">
+                    <p class="text-xs text-gray-500">Click to upload ownership proof</p>
+                  </template>
+                  <template x-if="newCollateral.ownership_proof">
+                    <p class="text-xs text-green-700 font-medium" x-text="newCollateral.ownership_proof.name"></p>
+                  </template>
+                </label>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Valuation Document</label>
+                <label class="upload-zone block cursor-pointer py-3" :class="newCollateral.valuation_document ? 'has-file' : ''">
+                  <input type="file" @change="handleCollateralFile('valuation_document',$event)"
+                         accept=".pdf,.jpg,.jpeg,.png" class="hidden" />
+                  <template x-if="!newCollateral.valuation_document">
+                    <p class="text-xs text-gray-500">Click to upload valuation report</p>
+                  </template>
+                  <template x-if="newCollateral.valuation_document">
+                    <p class="text-xs text-green-700 font-medium" x-text="newCollateral.valuation_document.name"></p>
+                  </template>
+                </label>
+              </div>
+            </div>
+
+            <p class="text-xs text-red-500" x-show="errors.collateral" x-text="errors.collateral"></p>
+
+            <button type="button" @click="addCollateral()"
+                    class="btn-primary text-sm">+ Add Collateral</button>
+          </div>
+
+          <p class="text-xs text-red-500" x-show="errors.collaterals" x-text="errors.collaterals"></p>
+        </div>
+
+        <!-- ════════════════════════════════════════════
+             STEP 6 — Guarantors
+        ════════════════════════════════════════════ -->
+        <div x-show="currentStep===6" class="fade-in space-y-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Step 6: Guarantors</h2>
+            <p class="text-sm text-gray-500 mt-1">Add at least one guarantor for your loan application</p>
+          </div>
+
+          <!-- Existing guarantors -->
+          <template x-if="guarantors.length > 0">
+            <div class="space-y-3">
+              <template x-for="(g, gi) in guarantors" :key="gi">
+                <div class="card-item flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-gray-800" x-text="g.name"></p>
+                    <p class="text-sm text-gray-500"><span x-text="g.phone"></span> &bull; <span class="capitalize" x-text="g.relationship_to_applicant.replace('_',' ')"></span></p>
+                    <p class="text-sm text-gray-400 truncate" x-text="g.occupation"></p>
+                  </div>
+                  <button type="button" @click="removeGuarantor(gi)"
+                          class="text-red-400 hover:text-red-600 shrink-0 text-sm font-medium">Remove</button>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Add guarantor form -->
+          <div class="border border-gray-200 rounded-xl p-5 bg-gray-50 space-y-4">
+            <h3 class="font-semibold text-gray-700 text-sm">Add Guarantor</h3>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Full Name *</label>
+                <input type="text" x-model="newGuarantor.name" placeholder="Guarantor's full name" class="form-input" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">National ID Number *</label>
+                <input type="text" x-model="newGuarantor.id_number" placeholder="e.g. 12345678" class="form-input" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Phone Number *</label>
+                <input type="tel" x-model="newGuarantor.phone" placeholder="+254700000000" class="form-input" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Email</label>
+                <input type="email" x-model="newGuarantor.email" placeholder="guarantor@example.com" class="form-input" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Relationship to Applicant *</label>
+                <select x-model="newGuarantor.relationship_to_applicant" class="form-input">
+                  <option value="">Select relationship</option>
+                  <option value="family">Family Member</option>
+                  <option value="friend">Friend</option>
+                  <option value="colleague">Colleague</option>
+                  <option value="business">Business Partner</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Occupation</label>
+                <input type="text" x-model="newGuarantor.occupation" placeholder="e.g. Teacher" class="form-input" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Monthly Income (KES)</label>
+                <input type="number" x-model.number="newGuarantor.monthly_income" min="0" placeholder="e.g. 40000" class="form-input" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Employer / Business Address *</label>
+                <input type="text" x-model="newGuarantor.employer_address" placeholder="Work address" class="form-input" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-xs font-semibold text-gray-600 mb-2">ID Copy *</label>
+                <label :class="newGuarantor.id_copy ? 'upload-zone has-file' : 'upload-zone'" class="block cursor-pointer py-3">
+                  <input type="file" @change="handleGuarantorFile('id_copy',$event)"
+                         accept=".pdf,.jpg,.jpeg,.png" class="hidden" />
+                  <template x-if="!newGuarantor.id_copy">
+                    <p class="text-xs text-gray-500">Click to upload guarantor's ID copy</p>
+                  </template>
+                  <template x-if="newGuarantor.id_copy">
+                    <p class="text-xs text-green-700 font-medium" x-text="newGuarantor.id_copy.name"></p>
+                  </template>
+                </label>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-2">Guarantee Letter *</label>
+                <label :class="newGuarantor.guarantee_letter ? 'upload-zone has-file' : 'upload-zone'" class="block cursor-pointer py-3">
+                  <input type="file" @change="handleGuarantorFile('guarantee_letter',$event)"
+                         accept=".pdf,.jpg,.jpeg,.png" class="hidden" />
+                  <template x-if="!newGuarantor.guarantee_letter">
+                    <p class="text-xs text-gray-500">Click to upload guarantee letter</p>
+                  </template>
+                  <template x-if="newGuarantor.guarantee_letter">
+                    <p class="text-xs text-green-700 font-medium" x-text="newGuarantor.guarantee_letter.name"></p>
+                  </template>
+                </label>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-2">Bank Statement <span class="font-normal text-gray-400">(optional)</span></label>
+                <label :class="newGuarantor.bank_statement ? 'upload-zone has-file' : 'upload-zone'" class="block cursor-pointer py-3">
+                  <input type="file" @change="handleGuarantorFile('bank_statement',$event)"
+                         accept=".pdf,.jpg,.jpeg,.png" class="hidden" />
+                  <template x-if="!newGuarantor.bank_statement">
+                    <p class="text-xs text-gray-500">Click to upload bank statement</p>
+                  </template>
+                  <template x-if="newGuarantor.bank_statement">
+                    <p class="text-xs text-green-700 font-medium" x-text="newGuarantor.bank_statement.name"></p>
+                  </template>
+                </label>
+              </div>
+            </div>
+
+            <p class="text-xs text-red-500" x-show="errors.guarantor" x-text="errors.guarantor"></p>
+
+            <button type="button" @click="addGuarantor()"
+                    class="btn-primary text-sm">+ Add Guarantor</button>
+          </div>
+
+          <p class="text-xs text-red-500" x-show="errors.guarantors" x-text="errors.guarantors"></p>
+        </div>
+
+        <!-- ════════════════════════════════════════════
+             STEP 7 — Review & Submit
+        ════════════════════════════════════════════ -->
+        <div x-show="currentStep===7" class="fade-in space-y-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900">Step 7: Review & Submit</h2>
+            <p class="text-sm text-gray-500 mt-1">Confirm everything before sending your application</p>
+          </div>
+
+          <!-- Loan summary -->
+          <div class="bg-purple-50 border border-purple-200 rounded-xl p-5">
+            <h3 class="font-semibold text-gray-800 mb-3">Loan Details</h3>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div><span</div> class="text-gray-500">Amount:</span> <span class="font-semibold text-gray-800">KES <span x-text="fmt(f.loan_amount)"></span></span></div>
+              <div><span class="text-gray-500">Duration:</span> <span class="font-semibold text-gray-800"><span x-text="f.loan_duration_months"></span> months</span></div>
+              <div><span class="text-gray-500">Monthly Payment:</span> <span class="font-semibold text-green-700">KES <span x-text="fmt(calc.monthlyPayment)"></span></span></div>
+              <div><span class="text-gray-500">Total Repayable:</span> <span class="font-semibold text-blue-700">KES <span x-text="fmt(calc.totalRepayable)"></span></span></div>
+              <div class="col-span-2"><span class="text-gray-500">Purpose:</span> <span class="font-semibold text-gray-800" x-text="f.loan_purpose"></span></div>
+            </div>
+          </div>
+
+          <!-- Personal summary -->
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <h3 class="font-semibold text-gray-800 mb-3">Personal Info</h3>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div><span class="text-gray-500">Name:</span> <span class="font-semibold text-gray-800" x-text="f.first_name + ' ' + f.last_name"></span></div>
+              <div><span class="text-gray-500">Phone:</span> <span class="font-semibold text-gray-800" x-text="f.phone_number"></span></div>
+              <div><span class="text-gray-500">Email:</span> <span class="font-semibold text-gray-800" x-text="f.email"></span></div>
+              <div><span class="text-gray-500">ID/Passport:</span> <span class="font-semibold text-gray-800" x-text="f.national_id"></span></div>
+            </div>
+          </div>
+
+          <!-- Collateral summary -->
+          <div x-show="collaterals.length > 0" class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <h3 class="font-semibold text-gray-800 mb-3">Collateral (<span x-text="collaterals.length"></span> item<span x-show="collaterals.length!==1">s</span>)</h3>
+            <div class="space-y-2">
+              <template x-for="(c, ci) in collaterals" :key="ci">
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-700 capitalize" x-text="c.collateral_type + ': ' + c.description.substring(0,40)"></span>
+                  <span class="font-semibold text-purple-700">KES <span x-text="fmt(c.estimated_value)"></span></span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Guarantor summary -->
+          <div x-show="guarantors.length > 0" class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <h3 class="font-semibold text-gray-800 mb-3">Guarantors (<span x-text="guarantors.length"></span>)</h3>
+            <div class="space-y-2">
+              <template x-for="(g, gi) in guarantors" :key="gi">
+                <div class="flex justify-between text-sm">
+                  <span class="font-semibold text-gray-800" x-text="g.name"></span>
+                  <span class="text-gray-500 capitalize" x-text="g.relationship_to_applicant.replace('_',' ')"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Documents -->
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <h3 class="font-semibold text-gray-800 mb-3">Uploaded Documents</h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex items-center gap-2">
+                <svg :class="files.id_copy ? 'text-green-500' : 'text-red-400'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span :class="files.id_copy ? 'text-green-700' : 'text-red-500'">ID / Passport Copy <span x-show="files.id_copy" class="text-gray-500" x-text="'— ' + (files.id_copy ? files.id_copy.name : '')"></span></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <svg :class="files.payslip ? 'text-green-500' : 'text-red-400'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span :class="files.payslip ? 'text-green-700' : 'text-red-500'">Payslip / Income Proof <span x-show="files.payslip" class="text-gray-500" x-text="'— ' + (files.payslip ? files.payslip.name : '')"></span></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <svg :class="files.kra_pin ? 'text-green-500' : 'text-gray-300'" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-gray-600">KRA PIN Certificate (optional) <span x-show="files.kra_pin" class="text-gray-500" x-text="'— ' + (files.kra_pin ? files.kra_pin.name : '')"></span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Terms -->
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" x-model="f.agree_terms" class="mt-0.5 rounded accent-purple-600" />
+              <span class="text-sm text-gray-700">
+                I confirm that all the information provided is accurate and I agree to the
+                <a href="#" class="text-blue-600 hover:underline font-medium">Terms &amp; Conditions</a>
+                and
+                <a href="#" class="text-blue-600 hover:underline font-medium">Privacy Policy</a>.
+              </span>
+            </label>
+            <p class="text-xs text-red-500 mt-2" x-show="errors.agree_terms" x-text="errors.agree_terms"></p>
+          </div>
+
+          <!-- Sync note -->
+          <div class="flex items-start gap-3 bg-green-50 border border-green-200 rounded-xl p-4 text-sm">
+            <svg class="w-5 h-5 text-green-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <div></div>
+              <p class="font-semibold text-green-800">Real-time Odoo Sync</p>
+              <p class="text-green-700 mt-0.5">Your application will be automatically synced to our backend within seconds of submission.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════
+             Global error / success banners
+        ════════════════════════════════════════════ -->
+        <div x-show="globalError" x-transition
+             class="mt-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4 text-sm">
+          <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+          </svg>
+          <p class="text-red-800 font-medium" x-text="globalError"></p>
+        </div>
+
+        <div x-show="successMsg" x-transition
+             class="mt-6 flex items-start gap-3 bg-green-50 border border-green-200 rounded-xl p-4 text-sm">
+          <svg class="w-5 h-5 text-green-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <p class="text-green-800 font-medium" x-text="successMsg"></p>
+        </div>
+
+        <!-- ════════════════════════════════════════════
+             Navigation
+        ════════════════════════════════════════════ -->
+        <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+          <button type="button" @click="prev()"
+                  x-show="currentStep > 1" :disabled="submitting"
+                  class="btn-secondary">
+            ← Previous
+          </button>
+          <div x-show="currentStep === 1"></div>
+
+          <div class="flex items-center gap-3 ml-auto">
+            <span class="text-xs text-gray-400">Step <span x-text="currentStep"></span> of <span x-text="steps.length"></span></span>
+
+            <!-- Next button (steps 1-6) -->
+            <button type="button" @click="next()"
+                    x-show="currentStep < steps.length" :disabled="submitting"
+                    class="btn-primary">
+              Next →
+            </button>
+
+            <!-- Submit button (step 7 only) -->
+            <button type="button" @click="submitForm()"
+                    x-show="currentStep === steps.length"
+                    :disabled="submitting || !f.agree_terms"
+                    class="btn-primary flex items-center gap-2">
+              <span x-show="!submitting">Submit Application</span>
+              <span x-show="submitting" class="flex items-center gap-2">
+                <svg class="w-4 h-4 spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Submitting…
+              </span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loanWizard() {
+  return {
+    currentStep: 1,
+    steps: ['Loan Details','Personal Info','Employment','Documents','Collateral','Guarantors','Review'],
+    submitting: false,
+    globalError: '',
+    successMsg: '',
+
+    // ── Main form fields ──
+    f: {
+      loan_amount: '',
+      loan_duration_months: '',
+      loan_purpose: '',
+      employment_type: '',
+      first_name: '{{ request.user.first_name|escapejs }}',
+      last_name: '{{ request.user.last_name|escapejs }}',
+      national_id: '',
+      phone_number: '',
+      email: '{{ request.user.email|escapejs }}',
+      employer_name: '',
+      job_title: '',
+      monthly_income: '',
+      employment_duration_years: '',
+      agree_terms: false,
+    },
+
+    // ── File references (not serialised into JSON) ──
+    files: { id_copy: null, payslip: null, kra_pin: null },
+
+    // ── Calculated loan figures ──
+    calc: { rate: 0, monthlyPayment: 0, totalRepayable: 0, totalInterest: 0 },
+
+    // ── Collateral list ──
+    collaterals: [],
+    newCollateral: {
+      collateral_type: '', description: '', estimated_value: '',
+      valuation_date: '', location: '',
+      ownership_proof: null, valuation_document: null,
+    },
+
+    // ── Guarantor list ──
+    guarantors: [],
+    newGuarantor: {
+      name: '', id_number: '', phone: '', email: '',
+      relationship_to_applicant: '', occupation: '',
+      monthly_income: '', employer_address: '',
+      id_copy: null, guarantee_letter: null, bank_statement: null,
+    },
+
+    // ── Field-level errors ──
+    errors: {},
+
+    // ── Helpers ──
+    fmt(n) {
+      return Number(n || 0).toLocaleString('en-KE');
+    },
+
+    calcLoan() {
+      const a = parseFloat(this.f.loan_amount) || 0;
+      const m = parseInt(this.f.loan_duration_months) || 0;
+      if (!a || !m) { this.calc = { rate:0, monthlyPayment:0, totalRepayable:0, totalInterest:0 }; return; }
+      let rate = a < 100000 ? 20 : a < 400000 ? 17.5 : a < 600000 ? 15 : a < 800000 ? 10 : a < 1000000 ? 7.5 : 5;
+      const mr = rate / 100 / 12;
+      const mp = Math.round((a * mr * Math.pow(1+mr,m)) / (Math.pow(1+mr,m) - 1));
+      const tr = mp * m;
+      this.calc = { rate, monthlyPayment: mp, totalRepayable: tr, totalInterest: tr - a };
+    },
+
+    handleFile(field, evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { this.errors = {...this.errors, [field]: 'File must be under 5 MB'}; evt.target.value=''; return; }
+      this.files[field] = file;
+      delete this.errors[field];
+    },
+
+    handleCollateralFile(field, evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { this.globalError = 'File must be under 5 MB'; evt.target.value=''; return; }
+      this.newCollateral[field] = file;
+    },
+
+    handleGuarantorFile(field, evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { this.globalError = 'File must be under 5 MB'; evt.target.value=''; return; }
+      this.newGuarantor[field] = file;
+    },
+
+    // ── Collateral CRUD ──
+    addCollateral() {
+      this.errors = {...this.errors, collateral: ''};
+      const c = this.newCollateral;
+      if (!c.collateral_type)  { this.errors.collateral = 'Please select a collateral type'; return; }
+      if (!c.description)      { this.errors.collateral = 'Please enter a description'; return; }
+      if (!c.estimated_value || c.estimated_value <= 0) { this.errors.collateral = 'Please enter a valid estimated value'; return; }
+      if (!c.valuation_date)   { this.errors.collateral = 'Please enter the valuation date'; return; }
+
+      this.collaterals.push({ ...c });
+      this.newCollateral = {
+        collateral_type:'', description:'', estimated_value:'',
+        valuation_date:'', location:'', ownership_proof:null, valuation_document:null,
+      };
+      delete this.errors.collaterals;
+    },
+
+    removeCollateral(i) { this.collaterals.splice(i,1); },
+
+    // ── Guarantor CRUD ──
+    addGuarantor() {
+      this.errors = {...this.errors, guarantor: ''};
+      const g = this.newGuarantor;
+      if (!g.name)                    { this.errors.guarantor = 'Full name is required'; return; }
+      if (!g.id_number)               { this.errors.guarantor = 'ID number is required'; return; }
+      if (!g.phone)                   { this.errors.guarantor = 'Phone number is required'; return; }
+      if (!g.relationship_to_applicant) { this.errors.guarantor = 'Please select the relationship'; return; }
+      if (!g.employer_address)        { this.errors.guarantor = 'Employer / business address is required'; return; }
+      if (!g.id_copy)                 { this.errors.guarantor = 'Please upload the guarantor\'s ID copy'; return; }
+      if (!g.guarantee_letter)        { this.errors.guarantor = 'Please upload the guarantee letter'; return; }
+
+      this.guarantors.push({ ...g });
+      this.newGuarantor = {
+        name:'', id_number:'', phone:'', email:'',
+        relationship_to_applicant:'', occupation:'',
+        monthly_income:'', employer_address:'',
+        id_copy:null, guarantee_letter:null, bank_statement:null,
+      };
+      delete this.errors.guarantors;
+    },
+
+    removeGuarantor(i) { this.guarantors.splice(i,1); },
+
+    // ── Per-step validation ──
+    validateStep(s) {
+      this.errors = {};
+      this.globalError = '';
+      switch(s) {
+        case 1:
+          if (!this.f.loan_amount || this.f.loan_amount < 1000) this.errors.loan_amount = 'Minimum loan amount is KES 1,000';
+          if (!this.f.loan_duration_months) this.errors.loan_duration_months = 'Please select a duration';
+          if (!this.f.loan_purpose || !this.f.loan_purpose.trim()) this.errors.loan_purpose = 'Please describe the loan purpose';
+          if (!this.f.employment_type) this.errors.employment_type = 'Please select employment type';
+          break;
+        case 2:
+          if (!this.f.first_name || !this.f.first_name.trim()) this.errors.first_name = 'First name is required';
+          if (!this.f.last_name  || !this.f.last_name.trim())  this.errors.last_name  = 'Last name is required';
+          if (!this.f.national_id || !this.f.national_id.trim()) this.errors.national_id = 'ID / Passport number is required';
+          if (!this.f.phone_number || !this.f.phone_number.trim()) this.errors.phone_number = 'Phone number is required';
+          if (!this.f.email || !this.f.email.includes('@')) this.errors.email = 'A valid email is required';
+          break;
+        case 3:
+          if (!this.f.monthly_income || this.f.monthly_income <= 0) this.errors.monthly_income = 'Monthly income is required';
+          if (this.f.employment_duration_years === '' || this.f.employment_duration_years < 0) this.errors.employment_duration_years = 'Employment duration is required';
+          break;
+        case 4:
+          if (!this.files.id_copy) this.errors.id_copy = 'ID / Passport copy is required';
+          if (!this.files.payslip) this.errors.payslip = 'Payslip / income proof is required';
+          break;
+        case 5:
+          if (this.collaterals.length === 0) this.errors.collaterals = 'Please add at least one collateral item';
+          break;
+        case 6:
+          if (this.guarantors.length === 0) this.errors.guarantors = 'Please add at least one guarantor';
+          break;
+        case 7:
+          if (!this.f.agree_terms) this.errors.agree_terms = 'You must accept the terms and conditions';
+          break;
+      }
+      return Object.keys(this.errors).length === 0;
+    },
+
+    next() {
+      if (this.validateStep(this.currentStep)) {
+        this.currentStep++;
+        this.globalError = '';
+        window.scrollTo({top:0, behavior:'smooth'});
+      } else {
+        this.globalError = 'Please fix the errors above before continuing.';
+      }
+    },
+
+    prev() {
+      if (this.currentStep > 1) {
+        this.currentStep--;
+        this.errors = {};
+        this.globalError = '';
+        window.scrollTo({top:0, behavior:'smooth'});
+      }
+    },
+
+    // ── Final submission ──
+    async submitForm() {
+      if (!this.validateStep(7)) { this.globalError = 'Please accept the terms and conditions.'; return; }
+
+      this.submitting = true;
+      this.globalError = '';
+      this.successMsg = '';
+
+      try {
+        const fd = new FormData();
+
+        // Scalar fields
+        const scalar = ['loan_amount','loan_duration_months','loan_purpose','employment_type',
+                        'first_name','last_name','national_id','phone_number','email',
+                        'employer_name','job_title','monthly_income','employment_duration_years'];
+        scalar.forEach(k => fd.append(k, this.f[k] ?? ''));
+
+        // Main documents
+        if (this.files.id_copy)  fd.append('id_copy',  this.files.id_copy);
+        if (this.files.payslip)  fd.append('payslip',  this.files.payslip);
+        if (this.files.kra_pin)  fd.append('kra_pin',  this.files.kra_pin);
+
+        // Collaterals — serialise each item as JSON + append files separately
+        fd.append('collaterals_count', this.collaterals.length);
+        this.collaterals.forEach((c, i) => {
+          fd.append(`collateral_${i}_type`,            c.collateral_type);
+          fd.append(`collateral_${i}_description`,     c.description);
+          fd.append(`collateral_${i}_estimated_value`, c.estimated_value);
+          fd.append(`collateral_${i}_valuation_date`,  c.valuation_date);
+          fd.append(`collateral_${i}_location`,        c.location || '');
+          if (c.ownership_proof)     fd.append(`collateral_${i}_ownership_proof`,     c.ownership_proof);
+          if (c.valuation_document)  fd.append(`collateral_${i}_valuation_document`,  c.valuation_document);
+        });
+
+        // Guarantors
+        fd.append('guarantors_count', this.guarantors.length);
+        this.guarantors.forEach((g, i) => {
+          fd.append(`guarantor_${i}_name`,                    g.name);
+          fd.append(`guarantor_${i}_id_number`,               g.id_number);
+          fd.append(`guarantor_${i}_phone`,                   g.phone);
+          fd.append(`guarantor_${i}_email`,                   g.email || '');
+          fd.append(`guarantor_${i}_relationship_to_applicant`, g.relationship_to_applicant);
+          fd.append(`guarantor_${i}_occupation`,              g.occupation || '');
+          fd.append(`guarantor_${i}_monthly_income`,          g.monthly_income || '');
+          fd.append(`guarantor_${i}_employer_address`,        g.employer_address);
+          if (g.id_copy)           fd.append(`guarantor_${i}_id_copy`,          g.id_copy);
+          if (g.guarantee_letter)  fd.append(`guarantor_${i}_guarantee_letter`, g.guarantee_letter);
+          if (g.bank_statement)    fd.append(`guarantor_${i}_bank_statement`,   g.bank_statement);
+        });
+
+        const resp = await fetch("{% url 'loans:application_submit' %}", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value,
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: fd,
+        });
+
+        let data;
+        try { data = await resp.json(); } catch(e) { data = {success:false, message:'Server error — please try again.'}; }
+
+        if (data.success) {
+          this.successMsg = 'Application submitted successfully! Redirecting…';
+          setTimeout(() => {
+            window.location.href = data.redirect_url || '{% url "dashboard:home" %}';
+          }, 2000);
+        } else {
+          this.globalError = data.message || 'Submission failed — please try again.';
+          if (data.errors) {
+            // Map server field errors back to steps
+            const stepMap = {
+              loan_amount:1, loan_duration_months:1, loan_purpose:1, employment_type:1,
+              first_name:2, last_name:2, national_id:2, phone_number:2, email:2,
+              monthly_income:3, employment_duration_years:3,
+              id_copy:4, payslip:4,
+            };
+            let jumpTo = 7;
+            for (const [field, _] of Object.entries(data.errors)) {
+              if (stepMap[field] && stepMap[field] < jumpTo) jumpTo = stepMap[field];
+              this.errors[field] = Array.isArray(data.errors[field]) ? data.errors[field].join(' ') : data.errors[field];
+            }
+            this.currentStep = jumpTo;
+          }
+        }
+      } catch(err) {
+        console.error(err);
+        this.globalError = 'A network error occurred. Please check your connection and try again.';
+      } finally {
+        this.submitting = false;
+      }
+    },
+
+    init() { this.calcLoan(); },
+  };
+}
+</script>
+{% endblock %}

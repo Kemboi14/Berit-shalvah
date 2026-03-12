@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Interest Rate Configuration -->
+    <record id="interest_rate_config_1" model="berit.interest.rate.config">
+        <field name="min_amount">1</field>
+        <field name="max_amount">99999</field>
+        <field name="interest_rate">20.0</field>
+        <field name="description">KES 1 - 99,999: 20% monthly</field>
+    </record>
+
+    <record id="interest_rate_config_2" model="berit.interest.rate.config">
+        <field name="min_amount">100000</field>
+        <field name="max_amount">399999</field>
+        <field name="interest_rate">17.5</field>
+        <field name="description">KES 100,000 - 399,999: 17.5% monthly</field>
+    </record>
+
+    <record id="interest_rate_config_3" model="berit.interest.rate.config">
+        <field name="min_amount">400000</field>
+        <field name="max_amount">599999</field>
+        <field name="interest_rate">15.0</field>
+        <field name="description">KES 400,000 - 599,999: 15% monthly</field>
+    </record>
+
+    <record id="interest_rate_config_4" model="berit.interest.rate.config">
+        <field name="min_amount">600000</field>
+        <field name="max_amount">799999</field>
+        <field name="interest_rate">10.0</field>
+        <field name="description">KES 600,000 - 799,999: 10% monthly</field>
+    </record>
+
+    <record id="interest_rate_config_5" model="berit.interest.rate.config">
+        <field name="min_amount">800000</field>
+        <field name="max_amount">999999</field>
+        <field name="interest_rate">7.5</field>
+        <field name="description">KES 800,000 - 999,999: 7.5% monthly</field>
+    </record>
+
+    <record id="interest_rate_config_6" model="berit.interest.rate.config">
+        <field name="min_amount">1000000</field>
+        <field name="max_amount">0</field>
+        <field name="interest_rate">5.0</field>
+        <field name="description">KES 1,000,000 and above: 5% monthly</field>
+    </record>
+</odoo>

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Loan Application Kanban View -->
+    <record id="view_berit_loan_application_kanban" model="ir.ui.view">
+        <field name="name">berit.loan.application.kanban</field>
+        <field name="model">berit.loan.application</field>
+        <field name="arch" type="xml">
+            <kanban string="Loan Applications" default_group_by="state">
+                <field name="name"/>
+                <field name="applicant_id"/>
+                <field name="loan_amount"/>
+                <field name="loan_duration"/>
+                <field name="monthly_repayment"/>
+                <field name="application_date"/>
+                <field name="kyc_verified"/>
+                <field name="crb_cleared"/>
+                <progressbar field="activity_state" colors='{"planned": "success", "today": "warning", "overdue": "danger"}'/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_card oe_kanban_global_click {{ record.kanban_color(record.state.raw_value) }}">
+                            <div class="o_kanban_card_header">
+                                <div class="o_kanban_manage_section">
+                                    <a class="o_kanban_manage_toggle_button" href="#" tabindex="-1">
+                                        <i class="fa fa-ellipsis-v" role="img" aria-label="Manage" title="Manage"/>
+                                    </a>
+                                </div>
+                                <div class="o_kanban_header_title">
+                                    <div class="o_primary">
+                                        <strong><field name="name"/></strong>
+                                    </div>
+                                    <div class="o_secondary">
+                                        <field name="applicant_id"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="o_kanban_card_content">
+                                <div class="o_kanban_primary_left">
+                                    <div class="o_kanban_primary_left">
+                                        <!-- View button removed to fix action reference issue -->
+                                    </div>
+                                </div>
+                                <div class="o_kanban_primary_right">
+                                    <div class="o_kanban_record_bottom">
+                                        <div class="oe_kanban_bottom_left">
+                                            <field name="loan_amount" widget="monetary"/>
+                                            <br/>
+                                            <field name="monthly_repayment" widget="monetary"/>
+                                        </div>
+                                        <div class="oe_kanban_bottom_right">
+                                            <img t-att-src="kanban_image('res.partner', 'image_128', record.applicant_id.raw_value)" 
+                                                 t-att-title="record.applicant_id.value" 
+                                                 t-att-alt="record.applicant_id.value" 
+                                                 class="oe_kanban_avatar"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="o_kanban_manage_view_section">
+                                <div class="o_kanban_manage_view_form">
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Loan Application Form View -->
+    <record id="view_berit_loan_application_form" model="ir.ui.view">
+        <field name="name">berit.loan.application.form</field>
+        <field name="model">berit.loan.application</field>
+        <field name="arch" type="xml">
+            <form string="Loan Application">
+                <header>
+                    <button name="action_submit" string="Submit" type="object" invisible="state != 'draft'" class="btn-primary"/>
+                    <button name="action_under_review" string="Start Review" type="object" invisible="state != 'submitted'" class="btn-secondary"/>
+                    <button name="action_approve" string="Approve" type="object" invisible="state != 'under_review'" class="btn-success" groups="berit_loan_manager"/>
+                    <button name="action_reject" string="Reject" type="object" invisible="state != 'under_review'" class="btn-danger" groups="berit_loan_manager"/>
+                    <button name="action_disburse" string="Disburse" type="object" invisible="state != 'approved'" class="btn-primary" groups="berit_loan_manager"/>
+                    <button name="action_activate" string="Activate" type="object" invisible="state != 'disbursed'" class="btn-primary" groups="berit_loan_manager"/>
+                    <button name="action_close" string="Close" type="object" invisible="state != 'active'" class="btn-success" groups="berit_loan_manager"/>
+                    <button name="action_default" string="Mark Defaulted" type="object" invisible="state != 'active'" class="btn-danger" groups="berit_loan_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,under_review,approved,disbursed,active,closed,defaulted"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="applicant_id" required="1"/>
+                            <field name="portal_application_ref"/>
+                            <field name="loan_officer_id"/>
+                            <field name="application_date"/>
+                            <field name="approval_date" readonly="1"/>
+                            <field name="disbursement_date" readonly="1"/>
+                            <field name="maturity_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="loan_amount"/>
+                            <field name="loan_duration"/>
+                            <field name="interest_rate" readonly="1"/>
+                            <field name="monthly_repayment" readonly="1"/>
+                            <field name="total_repayable" readonly="1"/>
+                            <field name="legal_fee" readonly="1"/>
+                            <field name="collateral_required" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Loan Details">
+                        <field name="loan_purpose"/>
+                        <field name="has_prior_loans" readonly="1"/>
+                        <field name="kyc_verified"/>
+                        <field name="crb_cleared"/>
+                        <field name="guarantor_id"/>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Loan Application List View -->
+    <record id="view_berit_loan_application_tree" model="ir.ui.view">
+        <field name="name">berit.loan.application.tree</field>
+        <field name="model">berit.loan.application</field>
+        <field name="arch" type="xml">
+            <list string="Loan Applications" decoration-success="state == 'approved'" decoration-warning="state == 'under_review'" decoration-danger="state == 'rejected' or state == 'defaulted'" decoration-muted="state == 'closed'">
+                <field name="name"/>
+                <field name="applicant_id"/>
+                <field name="loan_amount"/>
+                <field name="loan_duration"/>
+                <field name="interest_rate"/>
+                <field name="monthly_repayment"/>
+                <field name="state"/>
+                <field name="application_date"/>
+                <field name="loan_officer_id"/>
+                <field name="kyc_verified"/>
+                <field name="crb_cleared"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Loan Application Search View -->
+    <record id="view_berit_loan_application_search" model="ir.ui.view">
+        <field name="name">berit.loan.application.search</field>
+        <field name="model">berit.loan.application</field>
+        <field name="arch" type="xml">
+            <search string="Loan Applications">
+                <field name="name"/>
+                <field name="applicant_id"/>
+                <field name="portal_application_ref"/>
+                <field name="loan_officer_id"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Submitted" name="submitted" domain="[('state', '=', 'submitted')]"/>
+                <filter string="Under Review" name="under_review" domain="[('state', '=', 'under_review')]"/>
+                <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Applicant" name="group_applicant" context="{'group_by': 'applicant_id'}"/>
+                    <filter string="Loan Officer" name="group_loan_officer" context="{'group_by': 'loan_officer_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Loan Application Action -->
+    <record id="action_berit_loan_application" model="ir.actions.act_window">
+        <field name="name">Loan Applications</field>
+        <field name="res_model">berit.loan.application</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="view_id" ref="view_berit_loan_application_kanban"/>
+        <field name="search_view_id" ref="view_berit_loan_application_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first loan application
+            </p>
+            <p>
+                Use this form to create and manage loan applications for Berit Shalvah Financial Services.
+            </p>
+        </field>
+    </record>
+
+    <!-- Loan Application Form Action -->
+    <record id="action_berit_loan_application_form" model="ir.actions.act_window">
+        <field name="name">Loan Application</field>
+        <field name="res_model">berit.loan.application</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_berit_loan_application_form"/>
+        <field name="target">current</field>
+    </record>
+</odoo>

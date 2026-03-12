@@ -1,0 +1,811 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Welcome — Berit Shalvah Financial Services{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Hero ── */
+  .hero-section {
+    background: linear-gradient(135deg, var(--bs-primary-dark) 0%, var(--bs-primary) 55%, var(--bs-primary-light) 100%);
+    position: relative;
+    overflow: hidden;
+    padding: 5rem 0 4rem;
+    min-height: 88vh;
+    display: flex;
+    align-items: center;
+  }
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 60% at 75% 50%, rgba(245,166,35,.15) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 50% at 20% 80%, rgba(13,148,136,.12) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: rgba(245,166,35,.2);
+    border: 1px solid rgba(245,166,35,.4);
+    border-radius: 100px;
+    padding: .35rem 1rem;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--bs-accent-light);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+  .hero-title {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.08;
+    letter-spacing: -.03em;
+    margin-bottom: 1.25rem;
+  }
+  .hero-title .highlight {
+    color: var(--bs-accent);
+    position: relative;
+  }
+  .hero-subtitle {
+    font-size: 1.125rem;
+    color: rgba(255,255,255,.78);
+    line-height: 1.7;
+    max-width: 540px;
+    margin-bottom: 2.25rem;
+  }
+  .hero-cta-group { display: flex; flex-wrap: wrap; gap: .875rem; }
+  .btn-hero-primary {
+    background: var(--bs-accent) !important;
+    border-color: var(--bs-accent) !important;
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: .875rem 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px rgba(245,166,35,.35);
+    transition: var(--trans-base);
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: .5rem;
+  }
+  .btn-hero-primary:hover { background: var(--bs-accent-dark) !important; transform: translateY(-2px); box-shadow: 0 6px 28px rgba(245,166,35,.45); }
+  .btn-hero-outline {
+    background: rgba(255,255,255,.1) !important;
+    border: 1.5px solid rgba(255,255,255,.35) !important;
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: .875rem 2rem;
+    border-radius: var(--radius-lg);
+    transition: var(--trans-base);
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: .5rem;
+    backdrop-filter: blur(8px);
+  }
+  .btn-hero-outline:hover { background: rgba(255,255,255,.18) !important; border-color: rgba(255,255,255,.6) !important; transform: translateY(-2px); }
+
+  /* ── Hero Stats ── */
+  .hero-stats {
+    display: flex; flex-wrap: wrap; gap: 2rem;
+    margin-top: 2.75rem;
+    padding-top: 2.25rem;
+    border-top: 1px solid rgba(255,255,255,.15);
+  }
+  .hero-stat-value { font-size: 1.75rem; font-weight: 800; color: #fff; line-height: 1; letter-spacing: -.03em; }
+  .hero-stat-label { font-size: .8rem; color: rgba(255,255,255,.6); font-weight: 500; margin-top: .25rem; }
+
+  /* ── Hero visual card ── */
+  .hero-visual {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hero-card {
+    background: rgba(255,255,255,.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: var(--radius-2xl);
+    padding: 2rem;
+    width: 100%; max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .hero-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .hero-card-title { color: rgba(255,255,255,.7); font-size: .8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+  .hero-loan-amount { font-size: 2.5rem; font-weight: 900; color: #fff; letter-spacing: -.04em; margin-bottom: .25rem; }
+  .hero-loan-label  { font-size: .8125rem; color: rgba(255,255,255,.55); margin-bottom: 1.5rem; }
+  .hero-progress-label { display: flex; justify-content: space-between; margin-bottom: .5rem; }
+  .hero-progress-label span { font-size: .75rem; font-weight: 600; color: rgba(255,255,255,.65); }
+  .hero-progress-bar {
+    height: 8px; border-radius: 100px;
+    background: rgba(255,255,255,.12);
+    overflow: hidden; margin-bottom: 1.5rem;
+  }
+  .hero-progress-fill {
+    height: 100%; border-radius: 100px;
+    background: linear-gradient(90deg, var(--bs-accent), var(--bs-accent-light));
+    width: 68%;
+  }
+  .hero-card-row { display: flex; gap: 1rem; }
+  .hero-card-item {
+    flex: 1; background: rgba(255,255,255,.07); border-radius: var(--radius-lg);
+    padding: .875rem; border: 1px solid rgba(255,255,255,.1);
+  }
+  .hero-card-item-label { font-size: .7rem; color: rgba(255,255,255,.5); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .hero-card-item-value { font-size: 1.1rem; font-weight: 700; color: #fff; margin-top: .25rem; }
+  .hero-approved-tag {
+    display: inline-flex; align-items: center; gap: .375rem;
+    background: rgba(13,148,136,.3); border: 1px solid rgba(13,148,136,.5);
+    border-radius: 100px; padding: .3rem .875rem;
+    font-size: .75rem; font-weight: 700; color: #6ee7b7;
+    text-transform: uppercase; letter-spacing: .05em;
+    margin-top: 1.25rem;
+  }
+  .hero-approved-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #6ee7b7; }
+
+  .hero-float-badge {
+    position: absolute;
+    background: #fff;
+    border-radius: var(--radius-xl);
+    padding: .875rem 1.125rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,.18);
+    display: flex; align-items: center; gap: .75rem;
+    z-index: 2;
+  }
+  .hero-float-badge .fb-icon {
+    width: 38px; height: 38px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .hero-float-badge .fb-value { font-weight: 700; font-size: .9375rem; color: var(--gray-900); line-height: 1; }
+  .hero-float-badge .fb-label { font-size: .75rem; color: var(--gray-500); margin-top: .125rem; }
+  .hero-float-1 { top: -1rem; right: -1rem; }
+  .hero-float-2 { bottom: 2rem; left: -1.5rem; }
+
+  /* ── Features Section ── */
+  .features-section { padding: 5rem 0; background: #fff; }
+  .feature-card {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    height: 100%;
+    transition: var(--trans-base);
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: var(--feature-color, var(--bs-primary));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .3s ease;
+  }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); background: #fff; }
+  .feature-card:hover::before { transform: scaleX(1); }
+  .feature-icon {
+    width: 56px; height: 56px;
+    border-radius: var(--radius-lg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.375rem;
+    margin-bottom: 1.25rem;
+  }
+  .feature-card h5 { font-weight: 700; color: var(--gray-900); font-size: 1.0625rem; margin-bottom: .625rem; }
+  .feature-card p  { color: var(--gray-500); font-size: .9rem; line-height: 1.7; margin: 0; }
+
+  /* ── Calculator Section ── */
+  .calc-section { padding: 5rem 0; background: var(--gray-50); }
+  .calc-card {
+    background: #fff;
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+  }
+  .calc-left {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-light) 100%);
+    padding: 2.5rem;
+    color: #fff;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .calc-left h3 { font-size: 1.5rem; font-weight: 800; color: #fff; margin-bottom: .625rem; letter-spacing: -.02em; }
+  .calc-left p  { color: rgba(255,255,255,.72); font-size: .9rem; margin: 0; }
+  .calc-right { padding: 2.5rem; }
+  .range-track { position: relative; margin-bottom: 1.75rem; }
+  .range-input {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%; height: 6px;
+    border-radius: 100px;
+    background: var(--gray-200);
+    outline: none; cursor: pointer;
+    transition: var(--trans-fast);
+  }
+  .range-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bs-primary);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(27,58,107,.4);
+    border: 3px solid #fff;
+    transition: var(--trans-fast);
+  }
+  .range-input::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .range-labels { display: flex; justify-content: space-between; font-size: .75rem; color: var(--gray-400); margin-top: .375rem; }
+  .calc-result-card {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-light) 100%);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    color: #fff;
+    margin-top: 1.5rem;
+  }
+  .calc-result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .calc-result-item .r-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: rgba(255,255,255,.6); }
+  .calc-result-item .r-value { font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: .25rem; letter-spacing: -.02em; }
+
+  /* ── Stats Banner ── */
+  .stats-banner { padding: 4rem 0; background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-primary-light) 100%); }
+  .stat-box { text-align: center; }
+  .stat-box .big-num { font-size: 2.5rem; font-weight: 900; color: #fff; letter-spacing: -.04em; line-height: 1; }
+  .stat-box .big-label { font-size: .875rem; color: rgba(255,255,255,.65); margin-top: .375rem; font-weight: 500; }
+  .stat-divider { width: 1px; background: rgba(255,255,255,.2); align-self: stretch; }
+
+  /* ── How it works ── */
+  .how-section { padding: 5rem 0; background: #fff; }
+  .step-item { display: flex; gap: 1.5rem; align-items: flex-start; }
+  .step-number {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-primary-light));
+    color: #fff; font-weight: 800; font-size: 1.125rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; box-shadow: 0 4px 12px rgba(27,58,107,.3);
+  }
+  .step-content h6 { font-weight: 700; color: var(--gray-900); font-size: 1rem; margin-bottom: .375rem; }
+  .step-content p  { font-size: .875rem; color: var(--gray-500); line-height: 1.65; margin: 0; }
+  .step-connector {
+    width: 2px;
+    height: 32px;
+    background: linear-gradient(to bottom, var(--bs-primary-light), rgba(46,95,163,.2));
+    margin: .5rem 0 .5rem 23px;
+  }
+
+  /* ── Testimonials ── */
+  .testimonials-section { padding: 5rem 0; background: var(--gray-50); }
+  .testimonial-card {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-xl);
+    padding: 1.75rem;
+    height: 100%;
+    transition: var(--trans-base);
+    position: relative;
+  }
+  .testimonial-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .testimonial-card .quote-mark {
+    font-size: 4rem; line-height: .8;
+    color: var(--bs-primary);
+    opacity: .12;
+    font-family: Georgia, serif;
+    position: absolute;
+    top: 1rem; left: 1.5rem;
+  }
+  .testimonial-text { font-size: .9375rem; color: var(--gray-600); line-height: 1.7; font-style: italic; margin-bottom: 1.25rem; position: relative; z-index: 1; }
+  .testimonial-author { display: flex; align-items: center; gap: .875rem; }
+  .testimonial-avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-primary-light));
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .875rem; flex-shrink: 0;
+  }
+  .testimonial-author-name { font-weight: 700; font-size: .9rem; color: var(--gray-900); }
+  .testimonial-author-loc  { font-size: .8rem; color: var(--gray-500); margin-top: .1rem; }
+  .star-row { color: var(--bs-accent); font-size: .875rem; margin-bottom: .875rem; }
+
+  /* ── CTA Banner ── */
+  .cta-section {
+    padding: 5rem 0;
+    background: linear-gradient(135deg, var(--bs-primary-dark) 0%, var(--bs-primary) 60%, var(--bs-primary-light) 100%);
+    position: relative; overflow: hidden;
+  }
+  .cta-section::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 50% 80% at 80% 50%, rgba(245,166,35,.18) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cta-section h2 { font-size: clamp(1.75rem, 4vw, 2.75rem); font-weight: 900; color: #fff; letter-spacing: -.03em; }
+  .cta-section p  { font-size: 1.125rem; color: rgba(255,255,255,.72); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════ HERO ══════════════════ -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center g-5">
+
+      <!-- Left -->
+      <div class="col-lg-6">
+        <div class="hero-badge">
+          <i class="fas fa-star"></i>
+          Trusted by 10,000+ Kenyans
+        </div>
+        <h1 class="hero-title">
+          Where Vision<br>Meets
+          <span class="highlight">Responsible Capital</span>
+        </h1>
+        <p class="hero-subtitle">
+          Fast, transparent, and affordable loan solutions tailored for
+          individuals and businesses across Kenya. Apply online in minutes.
+        </p>
+        <div class="hero-cta-group">
+          {% if user.is_authenticated %}
+            <a href="{% url 'loans:modern_application' %}" class="btn-hero-primary">
+              <i class="fas fa-plus-circle"></i>Apply for a Loan
+            </a>
+            <a href="{% url 'dashboard:home' %}" class="btn-hero-outline">
+              <i class="fas fa-th-large"></i>My Dashboard
+            </a>
+          {% else %}
+            <a href="{% url 'accounts:signup' %}" class="btn-hero-primary">
+              <i class="fas fa-user-plus"></i>Get Started Free
+            </a>
+            <a href="{% url 'accounts:login' %}" class="btn-hero-outline">
+              <i class="fas fa-sign-in-alt"></i>Login
+            </a>
+          {% endif %}
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="hero-stat-value">KES 50M+</div>
+            <div class="hero-stat-label">Loans Disbursed</div>
+          </div>
+          <div>
+            <div class="hero-stat-value">10,000+</div>
+            <div class="hero-stat-label">Happy Clients</div>
+          </div>
+          <div>
+            <div class="hero-stat-value">5–20%</div>
+            <div class="hero-stat-label">Interest Rates</div>
+          </div>
+          <div>
+            <div class="hero-stat-value">24/7</div>
+            <div class="hero-stat-label">Online Access</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right — Demo Card -->
+      <div class="col-lg-6">
+        <div class="hero-visual">
+          <!-- Float badge top-right -->
+          <div class="hero-float-badge hero-float-1">
+            <div class="fb-icon" style="background:var(--bs-success-light);color:var(--bs-success);">
+              <i class="fas fa-check"></i>
+            </div>
+            <div>
+              <div class="fb-value">Approved!</div>
+              <div class="fb-label">Application #BS-2024</div>
+            </div>
+          </div>
+
+          <div class="hero-card">
+            <div class="hero-card-header">
+              <span class="hero-card-title">Loan Overview</span>
+              <span style="width:32px;height:32px;background:rgba(255,255,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:.8rem;">
+                <i class="fas fa-university"></i>
+              </span>
+            </div>
+            <div class="hero-loan-amount">KES 150,000</div>
+            <div class="hero-loan-label">Business Growth Loan · 12 months</div>
+            <div class="hero-progress-label">
+              <span>Repayment Progress</span>
+              <span style</span>="color:#fff;">68%</span>
+            </div>
+            <div class="hero-progress-bar">
+              <div class="hero-progress-fill"></div>
+            </div>
+            <div class="hero-card-row">
+              <div class="hero-card-item">
+                <div class="hero-card-item-label">Monthly</div>
+                <div class="hero-card-item-value">KES 14,500</div>
+              </div>
+              <div class="hero-card-item">
+                <div class="hero-card-item-label">Interest</div>
+                <div class="hero-card-item-value">15% p.a.</div>
+              </div>
+            </div>
+            <div class="hero-approved-tag">
+              Loan Active &amp; Disbursed
+            </div>
+          </div>
+
+          <!-- Float badge bottom-left -->
+          <div class="hero-float-badge hero-float-2">
+            <div class="fb-icon" style="background:#FFFBEB;color:var(--bs-accent-dark);">
+              <i class="fas fa-bolt"></i>
+            </div>
+            <div>
+              <div class="fb-value">2 Hours</div>
+              <div class="fb-label">Avg. approval time</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ FEATURES ══════════════════ -->
+<section class="features-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <p class="section-subtitle text-uppercase fw-700" style="color:var(--bs-primary);letter-spacing:.1em;font-size:.8rem;">Why Choose Us</p>
+      <h2 class="section-title">Banking that works for <em>you</em></h2>
+      <p class="section-subtitle mt-2">We make borrowing simple, transparent and accessible for all Kenyans.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="feature-card" style="--feature-color:var(--bs-primary);">
+          <div class="feature-icon" style="background:#EEF2FF;color:var(--bs-primary);">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <h5>Quick</h5> Approval</h5>
+          <p>Get your loan approved in as little as 2 hours. Our digital-first process eliminates paperwork and delays so you get funds when you need them most.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card" style="--feature-color:var(--bs-accent);">
+          <div class="feature-icon" style="background:#FFFBEB;color:var(--bs-accent-dark);">
+            <i class="fas fa-percentage"></i>
+          </div>
+          <h5>Competitive Rates</h5>
+          <p>Transparent interest rates from 5% to 20% per annum based on your profile. No hidden charges, no surprises — just fair lending built on trust.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card" style="--feature-color:var(--bs-success);">
+          <div class="feature-icon" style="background:var(--bs-success-light);color:var(--bs-success);">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <h5>Secure &amp; Safe</h5>
+          <p>Your personal data is encrypted and protected with enterprise-grade security. We are fully compliant with Kenya's Data Protection Act.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card" style="--feature-color:var(--bs-info);">
+          <div class="feature-icon" style="background:var(--bs-info-light);color:var(--bs-info);">
+            <i class="fas fa-mobile-alt"></i>
+          </div>
+          <h5>Apply Anywhere</h5>
+          <p>Submit your application from your phone, tablet or computer. Our mobile-friendly portal works 24/7 so you are never out of reach.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card" style="--feature-color:#7c3aed;">
+          <div class="feature-icon" style="background:#f5f3ff;color:#7c3aed;">
+            <i class="fas fa-calendar-check"></i>
+          </div>
+          <h5>Flexible Repayments</h5>
+          <p>Choose a repayment plan that fits your cash flow — from 1 to 60 months. Restructure your loan if life gets in the way.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card" style="--feature-color:#ea580c;">
+          <div class="feature-icon" style="background:#fff7ed;color:#ea580c;">
+            <i class="fas fa-headset"></i>
+          </div>
+          <h5>Dedicated Support</h5>
+          <p>Our Kenya-based support team is available via phone, email and WhatsApp. Real humans, not bots — here whenever you need us.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ STATS BANNER ══════════════════ -->
+<section class="stats-banner">
+  <div class="container">
+    <div class="d-flex flex-wrap justify-content-center align-items-center gap-5">
+      <div class="stat-box">
+        <div class="big-num">10,000+</div>
+        <div class="big-label">Happy Clients</div>
+      </div>
+      <div class="stat-divider d-none d-md-block"></div>
+      <div class="stat-box">
+        <div class="big-num">KES 50M+</div>
+        <div class="big-label">Loans Disbursed</div>
+      </div>
+      <div class="stat-divider d-none d-md-block"></div>
+      <div class="stat-box">
+        <div class="big-num">98%</div>
+        <div class="big-label">Approval Rate</div>
+      </div>
+      <div class="stat-divider d-none d-md-block"></div>
+      <div class="stat-box">
+        <div class="big-num">&lt; 2 hrs</div>
+        <div class="big-label">Average Approval</div>
+      </div>
+      <div class="stat-divider d-none d-md-block"></div>
+      <div class="stat-box">
+        <div class="big-num">12+</div>
+        <div class="big-label">Years of Service</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ HOW IT WORKS ══════════════════ -->
+<section class="how-section">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-5">
+        <p class="section-subtitle text-uppercase fw-700 mb-2" style="color:var(--bs-primary);letter-spacing:.1em;font-size:.8rem;">Process</p>
+        <h2 class="section-title mb-2">Get funded in 4 simple steps</h2>
+        <p class="section-subtitle">From application to disbursement — our streamlined process gets money in your hands fast.</p>
+        <a href="{% if user.is_authenticated %}{% url 'loans:modern_application' %}{% else %}{% url 'accounts:signup' %}{% endif %}" class="btn btn-primary btn-lg mt-3">
+          <i class="fas fa-arrow-right me-2"></i>Start My Application
+        </a>
+      </div>
+      <div class="col-lg-7">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h6>Create</h6> Your Account</h6>
+            <p>Sign up in under</p> 2 minutes. We only ask for your basic details — no lengthy forms, no branches to visit.</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h6>Complete the Loan Application</h6>
+            <p>Use our guided wizard to specify your loan amount, duration and purpose. Upload required documents digitally.</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h6>Get Your Loan Assessed</h6>
+            <p>Our credit team reviews your application within 2 hours. You'll get an SMS and email update at every stage.</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step-item">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h6>Receive Your Funds</h6>
+            <p>Once approved, funds are disbursed directly to your M-Pesa or bank account within 24 hours. That's it!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ LOAN CALCULATOR ══════════════════ -->
+<section class="calc-section" id="calculator">
+  <div class="container">
+    <div class="text-center mb-5">
+      <p class="section-subtitle text-uppercase fw-700 mb-2" style="color:var(--bs-primary);letter-spacing:.1em;font-size:.8rem;">Tools</p>
+      <h2 class="section-title">Quick Loan Calculator</h2>
+      <p class="section-subtitle">Estimate your repayments instantly — no commitment required.</p>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="calc-card">
+          <div class="row g-0">
+            <!-- Left panel -->
+            <div class="col-md-4 calc-left">
+              <div>
+                <h3>Calculate Your Loan</h3>
+                <p></h3>Adjust the sliders to see how different amounts and durations affect your repayments.</p>
+              </div>
+              <div id="calcSummaryLeft" class="mt-auto">
+                <div style="background:rgba(255,255,255,.1);border-radius:var(--radius-lg);padding:1.25rem;margin-top:2rem;">
+                  <div style="font-size:.75rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.07em;font-weight:600;">Principal Amount</div>
+                  <div id="summaryAmount" style="font-size:2rem;font-weight:900;color:#fff;letter-spacing:-.04em;margin-top:.25rem;">KES 50,000</div>
+                  <div style="font-size:.75rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-top:1rem;">Duration</div>
+                  <div id="summaryDuration" style="font-size:1.375rem;font-weight:700;color:#fff;margin-top:.25rem;">6 months</div>
+                </div>
+              </div>
+            </div>
+            <!-- Right panel -->
+            <div class="col-md-8 calc-right">
+              <div class="range-track">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label mb-0">Loan Amount</label>
+                  <span id="amountDisplay" style="font-weight:700;color:var(--bs-primary);font-size:1.0625rem;">KES 50,000</span>
+                </div>
+                <input type="range" class="range-input" id="loanAmount" min="5000" max="500000" step="5000" value="50000">
+                <div class="range-labels"><span>KES 5,000</span><span>KES 500,000</span></div>
+              </div>
+              <div class="range-track">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label mb-0">Loan Duration</label>
+                  <span id="durationDisplay" style="font-weight:700;color:var(--bs-primary);font-size:1.0625rem;">6 months</span>
+                </div>
+                <input type="range" class="range-input" id="loanDuration" min="1" max="60" step="1" value="6">
+                <div class="range-labels"><span>1 month</span><span>60 months</span></div>
+              </div>
+              <div class="calc-result-card" id="calcResults">
+                <div class="calc-result-grid">
+                  <div class="calc-result-item">
+                    <div class="r-label">Monthly Payment</div>
+                    <div class="r-value" id="monthlyPayment">KES 10,417</div>
+                  </div>
+                  <div class="calc-result-item">
+                    <div class="r-label">Total Repayable</div>
+                    <div class="r-value" id="totalRepayable">KES 62,500</div>
+                  </div>
+                  <div class="calc-result-item">
+                    <div class="r-label">Interest Rate</div>
+                    <div class="r-value" id="interestRate">20% p.a.</div>
+                  </div>
+                  <div class="calc-result-item">
+                    <div class="r-label">Total Interest</div>
+                    <div class="r-value" id="totalInterest">KES 12,500</div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-3 text-center">
+                <a href="{% if user.is_authenticated %}{% url 'loans:modern_application' %}{% else %}{% url 'accounts:signup' %}{% endif %}"
+                   class="btn btn-primary btn-lg">
+                  <i class="fas fa-paper-plane me-2"></i>Apply for This Loan
+                </a>
+                <p class="form-text mt-2">Results are estimates. Final terms subject to credit assessment.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ TESTIMONIALS ══════════════════ -->
+<section class="testimonials-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <p class="section-subtitle text-uppercase fw-700 mb-2" style="color:var(--bs-primary);letter-spacing:.1em;font-size:.8rem;">Reviews</p>
+      <h2 class="section-title">What our clients say</h2>
+      <p class="section-subtitle">Real stories from real Kenyans we've helped achieve their dreams.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="testimonial-card">
+          <div class="quote-mark">"</div>
+          <div class="star-row">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+          </div>
+          <p class="testimonial-text">Excellent service! Got my business loan approved within 2 hours. The online process was smooth and the team kept me informed at every step. Highly recommended!</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">JM</div>
+            <div>
+              <div class="testimonial-author-name">John M.</div>
+              <div class="testimonial-author-loc"><i class="fas fa-map-marker-alt fa-xs me-1"></i>Nairobi</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="testimonial-card">
+          <div class="quote-mark">"</div>
+          <div class="star-row">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+          </div>
+          <p class="testimonial-text">Best interest rates I have found anywhere. The repayment terms are flexible and when I had a difficult month, they restructured my loan without hassle. Very professional.</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">SK</div>
+            <div>
+              <div class="testimonial-author-name">Sarah K.</div>
+              <div class="testimonial-author-loc"><i class="fas fa-map-marker-alt fa-xs me-1"></i>Mombasa</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="testimonial-card">
+          <div class="quote-mark">"</div>
+          <div class="star-row">
+            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+          </div>
+          <p class="testimonial-text">Very reliable and transparent. I needed emergency funds and they delivered within 24 hours. The mobile portal makes everything so easy to track. I will use them again!</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">MO</div>
+            <div>
+              <div class="testimonial-author-name">Michael O.</div>
+              <div class="testimonial-author-loc"><i class="fas fa-map-marker-alt fa-xs me-1"></i>Kisumu</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ CTA ══════════════════ -->
+<section class="cta-section">
+  <div class="container text-center position-relative">
+    <p class="section-subtitle text-uppercase fw-700 mb-3" style="color:var(--bs-accent);letter-spacing:.1em;font-size:.8rem;">Get Started Today</p>
+    <h2 class="mb-3">Ready to unlock your financial potential?</h2>
+    <p class="mb-4">Join thousands of Kenyans who trust Berit Shalvah for fast, fair and flexible financing.</p>
+    {% if user.is_authenticated %}
+      <a href="{% url 'loans:modern_application' %}" class="btn-hero-primary d-inline-flex">
+        <i class="fas fa-rocket"></i>Apply for a Loan Now
+      </a>
+    {% else %}
+      <div class="d-flex flex-wrap justify-content-center gap-3">
+        <a href="{% url 'accounts:signup' %}" class="btn-hero-primary">
+          <i class="fas fa-user-plus"></i>Create Free Account
+        </a>
+        <a href="{% url 'accounts:login' %}" class="btn-hero-outline">
+          <i class="fas fa-sign-in-alt"></i>Login
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var amountInput   = document.getElementById('loanAmount');
+  var durationInput = document.getElementById('loanDuration');
+
+  function getRate(amount) {
+    if (amount >= 400000) return 0.15;
+    if (amount >= 100000) return 0.175;
+    return 0.20;
+  }
+
+  function fmt(n) {
+    return new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(n);
+  }
+
+  function calculate() {
+    var amount   = parseInt(amountInput.value);
+    var duration = parseInt(durationInput.value);
+    var rate     = getRate(amount);
+    var totalInterest = amount * rate * (duration / 12);
+    var totalRepayable = amount + totalInterest;
+    var monthly = totalRepayable / duration;
+
+    document.getElementById('amountDisplay').textContent     = fmt(amount);
+    document.getElementById('durationDisplay').textContent   = duration + (duration === 1 ? ' month' : ' months');
+    document.getElementById('summaryAmount').textContent     = fmt(amount);
+    document.getElementById('summaryDuration').textContent   = duration + (duration === 1 ? ' month' : ' months');
+    document.getElementById('monthlyPayment').textContent    = fmt(Math.round(monthly));
+    document.getElementById('totalRepayable').textContent    = fmt(Math.round(totalRepayable));
+    document.getElementById('interestRate').textContent      = (rate * 100).toFixed(1) + '% p.a.';
+    document.getElementById('totalInterest').textContent     = fmt(Math.round(totalInterest));
+
+    // Update range track fill colour
+    var pct = ((amount - 5000) / (500000 - 5000)) * 100;
+    amountInput.style.background = 'linear-gradient(to right, var(--bs-primary) ' + pct + '%, var(--gray-200) ' + pct + '%)';
+    var dpct = ((duration - 1) / (60 - 1)) * 100;
+    durationInput.style.background = 'linear-gradient(to right, var(--bs-primary) ' + dpct + '%, var(--gray-200) ' + dpct + '%)';
+  }
+
+  amountInput.addEventListener('input', calculate);
+  durationInput.addEventListener('input', calculate);
+  calculate();
+})();
+</script>
+{% endblock %}
+```
+
+Now let me rebuild the login and signup pages:

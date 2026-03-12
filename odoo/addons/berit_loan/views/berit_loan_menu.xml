@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main Dashboard Menu - Top level menu without parent -->
+    <menuitem id="menu_berit_loan_root" name="Berit Loans" sequence="5" web_icon="berit_loan,static/description/icon.png"/>
+
+    <!-- Applications Menu -->
+    <menuitem id="menu_berit_loan_applications" name="Applications" parent="menu_berit_loan_root" sequence="10"/>
+    <menuitem id="menu_berit_loan_applications_all" name="All Applications" parent="menu_berit_loan_applications" action="action_berit_loan_application" sequence="10"/>
+    <menuitem id="menu_berit_loan_applications_draft" name="Draft" parent="menu_berit_loan_applications" action="action_berit_loan_application" sequence="20"/>
+    <menuitem id="menu_berit_loan_applications_submitted" name="Submitted" parent="menu_berit_loan_applications" action="action_berit_loan_application" sequence="30"/>
+    <menuitem id="menu_berit_loan_applications_under_review" name="Under Review" parent="menu_berit_loan_applications" action="action_berit_loan_application" sequence="40"/>
+
+    <!-- Active Loans Menu -->
+    <menuitem id="menu_berit_loan_active" name="Active Loans" parent="menu_berit_loan_root" sequence="20"/>
+    <menuitem id="menu_berit_loan_active_loans" name="Active Loans" parent="menu_berit_loan_active" action="action_berit_loan_application" sequence="10"/>
+
+    <!-- Defaulted Loans Menu -->
+    <menuitem id="menu_berit_loan_defaulted" name="Defaulted Loans" parent="menu_berit_loan_root" sequence="30"/>
+    <menuitem id="menu_berit_loan_defaulted_loans" name="Defaulted Loans" parent="menu_berit_loan_defaulted" action="action_berit_loan_application" sequence="20"/>
+
+    <!-- Documents Menu -->
+    <menuitem id="menu_berit_loan_documents" name="Documents" parent="menu_berit_loan_root" sequence="40"/>
+    <menuitem id="menu_berit_loan_documents_all" name="All Documents" parent="menu_berit_loan_documents" action="action_berit_loan_document" sequence="10"/>
+    <menuitem id="menu_berit_loan_documents_pending" name="Pending Verification" parent="menu_berit_loan_documents" action="action_berit_loan_document_pending" sequence="20"/>
+    <menuitem id="menu_berit_loan_documents_expired" name="Expired Documents" parent="menu_berit_loan_documents" action="action_berit_loan_document_expired" sequence="30"/>
+
+    <!-- Collaterals Menu -->
+    <menuitem id="menu_berit_loan_collaterals" name="Collaterals" parent="menu_berit_loan_root" sequence="50"/>
+    <menuitem id="menu_berit_loan_collaterals_all" name="All Collaterals" parent="menu_berit_loan_collaterals" action="action_berit_collateral" sequence="10"/>
+
+    <!-- Guarantors Menu -->
+    <menuitem id="menu_berit_loan_guarantors" name="Guarantors" parent="menu_berit_loan_root" sequence="60"/>
+    <menuitem id="menu_berit_loan_guarantors_all" name="All Guarantors" parent="menu_berit_loan_guarantors" action="action_berit_guarantor" sequence="10"/>
+    <menuitem id="menu_berit_loan_guarantors_pending" name="Pending Verification" parent="menu_berit_loan_guarantors" action="action_berit_guarantor_pending" sequence="20"/>
+
+    <!-- Reports Menu -->
+    <menuitem id="menu_berit_loan_reports" name="Reports" parent="menu_berit_loan_root" sequence="70"/>
+    <menuitem id="menu_berit_loan_reports_loan_agreement" name="Loan Agreements" parent="menu_berit_loan_reports" sequence="10"/>
+    <menuitem id="menu_berit_loan_reports_repayment_schedule" name="Repayment Reports" parent="menu_berit_loan_reports" sequence="20"/>
+    <menuitem id="menu_berit_loan_reports_portfolio" name="Portfolio Reports" parent="menu_berit_loan_reports" sequence="30"/>
+
+    <!-- Configuration Menu -->
+    <menuitem id="menu_berit_loan_configuration" name="Configuration" parent="menu_berit_loan_root" sequence="80"/>
+    <menuitem id="menu_berit_loan_sequences" name="Sequences" parent="menu_berit_loan_configuration" sequence="10"/>
+    <menuitem id="menu_berit_loan_interest_rates" name="Interest Rates" parent="menu_berit_loan_configuration" sequence="20"/>
+    <menuitem id="menu_berit_loan_document_types" name="Document Types" parent="menu_berit_loan_configuration" sequence="30"/>
+    <menuitem id="menu_berit_loan_settings" name="Settings" parent="menu_berit_loan_configuration" sequence="40"/>
+</odoo>

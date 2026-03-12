@@ -1,0 +1,893 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings — Berit Shalvah{% endblock %}
+{% block nav_settings %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dash-layout {
+        display: flex;
+        min-height: calc(100vh - 64px);
+    }
+    .dash-content {
+        flex: 1;
+        margin-left: 260px;
+        background: var(--gray-50);
+        min-height: calc(100vh - 64px);
+        display: flex;
+        flex-direction: column;
+    }
+    .dash-inner {
+        padding: 2rem;
+        flex: 1;
+    }
+
+    /* ── Page header ── */
+    .bs-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .bs-page-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin: 0;
+        letter-spacing: -.02em;
+    }
+    .bs-page-header .breadcrumb {
+        font-size: .8rem;
+        margin: .25rem 0 0;
+        padding: 0;
+        background: none;
+        display: flex;
+        gap: .4rem;
+        align-items: center;
+        list-style: none;
+    }
+    .bs-page-header .breadcrumb-item a { color: var(--bs-primary); text-decoration: none; }
+    .bs-page-header .breadcrumb-item a:hover { text-decoration: underline; }
+    .bs-page-header .breadcrumb-item.active { color: var(--gray-500); }
+    .bs-page-header .breadcrumb-item + .breadcrumb-item::before {
+        content: '/';
+        color: var(--gray-300);
+    }
+
+    /* ── Settings card ── */
+    .settings-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .settings-card-header {
+        padding: 1.125rem 1.5rem;
+        border-bottom: 1px solid var(--gray-100);
+        display: flex;
+        align-items: center;
+        gap: .625rem;
+    }
+    .settings-card-header .sch-icon {
+        width: 32px; height: 32px;
+        border-radius: var(--radius-base);
+        display: flex; align-items: center; justify-content: center;
+        font-size: .8rem;
+        flex-shrink: 0;
+    }
+    .settings-card-header h5 {
+        font-size: .9375rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+    .settings-card-body { padding: 1.5rem; }
+
+    /* ── Form fields ── */
+    .form-row-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .form-row-grid.single { grid-template-columns: 1fr; }
+    .form-row-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .form-field { display: flex; flex-direction: column; gap: .375rem; }
+    .form-field label {
+        font-size: .8rem;
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+    .form-field .form-control,
+    .form-field .form-select {
+        border-radius: var(--radius-base);
+        border: 1.5px solid var(--gray-200);
+        padding: .55rem .875rem;
+        font-size: .875rem;
+        color: var(--gray-900);
+        transition: border-color .15s, box-shadow .15s;
+    }
+    .form-field .form-control:focus,
+    .form-field .form-select:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), .12);
+        outline: none;
+    }
+    .form-field .hint {
+        font-size: .75rem;
+        color: var(--gray-400);
+    }
+
+    /* ── Section sub-label ── */
+    .sub-label {
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: var(--gray-400);
+        margin: 1.125rem 0 .875rem;
+        padding-bottom: .5rem;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    .sub-label:first-child { margin-top: 0; }
+
+    /* ── Toggle switch ── */
+    .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .75rem 0;
+        border-bottom: 1px solid var(--gray-50);
+    }
+    .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .toggle-row:first-child { padding-top: 0; }
+    .toggle-label {
+        font-size: .875rem;
+        color: var(--gray-700);
+        font-weight: 500;
+    }
+    .toggle-label small {
+        display: block;
+        font-size: .75rem;
+        color: var(--gray-500);
+        font-weight: 400;
+        margin-top: .1rem;
+    }
+    .form-check-input {
+        width: 2.25rem;
+        height: 1.25rem;
+        border-radius: 100px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .form-check-input:checked { background-color: var(--bs-primary); border-color: var(--bs-primary); }
+    .form-check-input:focus { box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb),.15); }
+
+    /* ── Form actions ── */
+    .form-actions {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--gray-100);
+        margin-top: 1.25rem;
+    }
+    .section-divider {
+        border: none;
+        border-top: 1px solid var(--gray-100);
+        margin: 1.375rem 0 1.25rem;
+    }
+
+    /* ── Quick actions sidebar ── */
+    .action-btn-list { display: flex; flex-direction: column; gap: .625rem; }
+    .action-btn-list a,
+    .action-btn-list button {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding: .75rem 1rem;
+        border-radius: var(--radius-base);
+        font-size: .875rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1.5px solid var(--gray-200);
+        background: #fff;
+        color: var(--gray-700);
+        cursor: pointer;
+        transition: var(--trans-base);
+        width: 100%;
+        text-align: left;
+    }
+    .action-btn-list a:hover,
+    .action-btn-list button:hover {
+        border-color: var(--bs-primary);
+        color: var(--bs-primary);
+        background: rgba(var(--bs-primary-rgb),.03);
+    }
+    .action-btn-list a i,
+    .action-btn-list button i {
+        width: 16px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .action-btn-list .danger-btn:hover {
+        border-color: #dc2626;
+        color: #dc2626;
+        background: rgba(220,38,38,.03);
+    }
+
+    /* ── Stats list ── */
+    .stat-list { display: flex; flex-direction: column; }
+    .stat-list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: .625rem 0;
+        border-bottom: 1px solid var(--gray-50);
+        font-size: .8625rem;
+        color: var(--gray-600);
+    }
+    .stat-list-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .stat-list-item:first-child { padding-top: 0; }
+    .stat-list-item strong { color: var(--gray-900); font-weight: 700; }
+
+    /* ── Danger zone card ── */
+    .danger-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1.5px solid #fecaca;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .danger-card-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #fecaca;
+        background: #fef2f2;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+    .danger-card-header h5 {
+        font-size: .9375rem;
+        font-weight: 700;
+        color: #dc2626;
+        margin: 0;
+    }
+    .danger-card-body { padding: 1.375rem 1.5rem; }
+    .danger-card-body p {
+        font-size: .85rem;
+        color: var(--gray-600);
+        margin-bottom: 1rem;
+    }
+    .danger-btn-row { display: flex; flex-direction: column; gap: .5rem; }
+    .btn-danger-outline {
+        display: flex;
+        align-items: center;
+        gap: .625rem;
+        padding: .6rem 1rem;
+        border-radius: var(--radius-base);
+        font-size: .875rem;
+        font-weight: 600;
+        border: 1.5px solid #fecaca;
+        background: #fff;
+        color: #dc2626;
+        cursor: pointer;
+        transition: var(--trans-base);
+    }
+    .btn-danger-outline:hover { background: #fef2f2; border-color: #dc2626; }
+    .btn-danger-solid {
+        display: flex;
+        align-items: center;
+        gap: .625rem;
+        padding: .6rem 1rem;
+        border-radius: var(--radius-base);
+        font-size: .875rem;
+        font-weight: 600;
+        border: 1.5px solid #dc2626;
+        background: #dc2626;
+        color: #fff;
+        cursor: pointer;
+        transition: var(--trans-base);
+    }
+    .btn-danger-solid:hover { background: #b91c1c; border-color: #b91c1c; }
+
+    @media (max-width: 991.98px) {
+        .dash-content { margin-left: 0; }
+        .dash-inner   { padding: 1.25rem; }
+        .form-row-grid { grid-template-columns: 1fr; }
+        .form-row-grid.three { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 575.98px) {
+        .form-row-grid.three { grid-template-columns: 1fr; }
+        .form-actions { flex-direction: column; align-items: stretch; }
+    }
+</style>
+{% endblock %}
+
+{% block full_content %}
+<div class="dash-layout">
+
+    <!-- ══════ SIDEBAR ══════ -->
+    <aside class="bs-sidebar" id="bsSidebar">
+        <div class="sidebar-user">
+            <div class="avatar">
+                {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+            </div>
+            <div style="min-width:0;">
+                <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                <div class="user-role">Client Account</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section-title">Main</div>
+        <nav>
+            <a href="{% url 'dashboard:home' %}" class="nav-link">
+                <i class="fas fa-th-large"></i>Dashboard
+            </a>
+            <a href="{% url 'loans:modern_application' %}" class="nav-link">
+                <i class="fas fa-plus-circle"></i>Apply for Loan
+            </a>
+            <a href="{% url 'loans:application_list' %}" class="nav-link">
+                <i class="fas fa-file-contract"></i>My Loans
+            </a>
+        </nav>
+
+        <div class="sidebar-section-title">Account</div>
+        <nav>
+            <a href="{% url 'accounts:profile' %}" class="nav-link">
+                <i class="fas fa-user"></i>My Profile
+            </a>
+            <a href="{% url 'accounts:documents' %}" class="nav-link">
+                <i class="fas fa-folder"></i>My Documents
+            </a>
+            <a href="{% url 'accounts:settings' %}" class="nav-link active">
+                <i class="fas fa-cog"></i>Settings
+            </a>
+        </nav>
+
+        {% if request.user.is_staff %}
+        <div class="sidebar-section-title">Administration</div>
+        <nav>
+            <a href="{% url 'dashboard:staff' %}" class="nav-link">
+                <i class="fas fa-users-cog"></i>Staff Dashboard
+            </a>
+            <a href="{% url 'admin:index' %}" class="nav-link">
+                <i class="fas fa-tools"></i>Django Admin
+            </a>
+        </nav>
+        {% endif %}
+
+        <hr>
+        <nav>
+            <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="nav-link" style="color:rgba(255,100,100,.7);background:none;border:none;width:100%;text-align:left;cursor:pointer;padding:0;"><i class="fas fa-sign-out-alt"></i>Sign Out</button></form>
+        </nav>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- ══════ MAIN CONTENT ══════ -->
+    <div class="dash-content">
+
+        <!-- Mobile top bar -->
+        <div class="d-lg-none d-flex align-items-center justify-content-between px-3 py-2"
+             style="background:#fff;border-bottom:1px solid var(--gray-200);">
+            <button onclick="openSidebar()" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span style="font-weight:700;font-size:.9rem;color:var(--gray-900);">Settings</span>
+            <span style="width:32px;"></span>
+        </div>
+
+        <div class="dash-inner">
+
+            <!-- Page Header -->
+            <div class="bs-page-header">
+                <div>
+                    <h1><i class="fas fa-cog me-2" style="color:var(--bs-primary);font-size:1.2rem;"></i>Settings</h1>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Settings</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="row g-4">
+
+                <!-- ── LEFT: Main settings ── -->
+                <div class="col-lg-8">
+
+                    <!-- Account Settings -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div class="sch-icon" style="background:rgba(var(--bs-primary-rgb),.1);color:var(--bs-primary);">
+                                <i class="fas fa-user-cog"></i>
+                            </div>
+                            <h5>Account Settings</h5>
+                        </div>
+                        <div class="settings-card-body">
+                            <form method="POST" id="accountSettingsForm">
+                                {% csrf_token %}
+                                <div class="form-row-grid">
+                                    <div class="form-field">
+                                        <label for="firstName">First Name</label>
+                                        <input type="text" class="form-control" id="firstName" name="first_name"
+                                               value="{{ user.first_name }}">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="lastName">Last Name</label>
+                                        <input type="text" class="form-control" id="lastName" name="last_name"
+                                               value="{{ user.last_name }}">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="email">Email Address</label>
+                                        <input type="email" class="form-control" id="email" name="email"
+                                               value="{{ user.email }}">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="phone">Phone Number</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone"
+                                               value="{{ user.phone }}" placeholder="""+254 7XX XXX XXX">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary" id="accountSaveBtn">
+                                        <i class="fas fa-save me-2"></i>Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div class="sch-icon" style="background:rgba(220,38,38,.1);color:#dc2626;">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h5>Security Settings</h5>
+                        </div>
+                        <div class="settings-card-body">
+
+                            <div class="sub-label">Change Password</div>
+                            <form method="POST" id="passwordForm">
+                                {% csrf_token %}
+                                <div class="form-row-grid single">
+                                    <div class="form-field">
+                                        <label for="currentPassword">Current Password</label>
+                                        <input type="password" class="form-control" id="currentPassword"
+                                               name="current_password" autocomplete="current-password">
+                                    </div>
+                                </div>
+                                <div class="form-row-grid">
+                                    <div class="form-field">
+                                        <label for="newPassword">New Password</label>
+                                        <input type="password" class="form-control" id="newPassword"
+                                               name="new_password" autocomplete="new-password">
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="confirmPassword">Confirm New Password</label>
+                                        <input type="password" class="form-control" id="confirmPassword"
+                                               name="confirm_password" autocomplete="new-password">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary" id="pwSaveBtn">
+                                        <i class="fas fa-lock me-2"></i>Change Password
+                                    </button>
+                                </div>
+                            </form>
+
+                            <hr class="section-divider">
+
+                            <div class="sub-label" style="margin-top:0;">Two-Factor Authentication</div>
+                            <div class="toggle-row">
+                                <div class="toggle-label">
+                                    Enable 2FA
+                                    <small>Add an</small> extra layer of security to your account via SMS or authenticator app</small>
+                                </div>
+                                <div class="form-check form-switch" style="margin:0;padding:0;">
+                                    <input class="form-check-input" type="checkbox" id="twoFactorAuth"
+                                           style="margin:0;" {% if user.two_factor_enabled %}checked{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div class="sch-icon" style="background:rgba(245,166,35,.1);color:var(--bs-accent);">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <h5>Notification Preferences</h5>
+                        </div>
+                        <div class="settings-card-body">
+                            <form method="POST" id="notificationForm">
+                                {% csrf_token %}
+
+                                <div class="sub-label">Email Notifications</div>
+                                <div class="toggle-row">
+                                    <div class="toggle-label">
+                                        Loan Application Updates
+                                        <small>Status changes, approvals, rejections</small>
+                                    </div>
+                                    <div class="form-check form-switch" style="margin:0;padding:0;">
+                                        <input class="form-check-input" type="checkbox" id="emailLoanUpdates"
+                                               name="email_loan_updates" style="margin:0;"
+                                               {% if user.client_profile.email_notifications %}checked{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-label">
+                                        Payment Reminders
+                                        <small>Upcoming due dates and repayment alerts</small>
+                                    </div>
+                                    <div class="form-check form-switch" style="margin:0;padding:0;">
+                                        <input class="form-check-input" type="checkbox" id="emailPaymentReminders"
+                                               name="email_payment_reminders" style="margin:0;"
+                                               {% if user.client_profile.email_notifications %}checked{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-label">
+                                        Marketing & Promotions
+                                        <small>News, offers, and updates from Berit Shalvah</small>
+                                    </div>
+                                    <div class="form-check form-switch" style="margin:0;padding:0;">
+                                        <input class="form-check-input" type="checkbox" id="emailMarketing"
+                                               name="email_marketing" style="margin:0;">
+                                    </div>
+                                </div>
+
+                                <div class="sub-label">SMS Notifications</div>
+                                <div class="toggle-row">
+                                    <div class="toggle-label">
+                                        Loan Status SMS
+                                        <small>Instant SMS when your loan status changes</small>
+                                    </div>
+                                    <div class="form-check form-switch" style="margin:0;padding:0;">
+                                        <input class="form-check-input" type="checkbox" id="smsLoanUpdates"
+                                               name="sms_loan_updates" style="margin:0;"
+                                               {% if user.client_profile.sms_notifications %}checked{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="toggle-row">
+                                    <div class="toggle-label">
+                                        Payment Reminders via SMS
+                                        <small>SMS reminders before your repayment due date</small>
+                                    </div>
+                                    <div class="form-check form-switch" style="margin:0;padding:0;">
+                                        <input class="form-check-input" type="checkbox" id="smsPaymentReminders"
+                                               name="sms_payment_reminders" style="margin:0;"
+                                               {% if user.client_profile.sms_notifications %}checked{% endif %}>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary" id="notifSaveBtn">
+                                        <i class="fas fa-bell me-2"></i>Save Notification Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="danger-card">
+                        <div class="danger-card-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h5>Danger Zone</h5>
+                        </div>
+                        <div class="danger-card-body">
+                            <p>These actions are irreversible. Please be absolutely certain before proceeding.</p>
+                            <div class="danger-btn-row">
+                                <button class="btn-danger-outline" onclick="deactivateAccount()">
+                                    <i class="fas fa-pause-circle"></i>
+                                    Deactivate Account
+                                    <span style="font-size:.75rem;font-weight:400;color:#ef4444;margin-left:auto;">
+                                        Reversible — contact support to reactivate
+                                    </span>
+                                </button>
+                                <button class="btn-danger-solid" onclick="deleteAccount()">
+                                    <i class="fas fa-trash-alt"></i>
+                                    Delete Account Permanently
+                                    <span style="font-size:.75rem;font-weight:400;opacity:.85;margin-left:auto;">
+                                        All data will be erased
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ── RIGHT: Quick actions + stats ── -->
+                <div class="col-lg-4">
+
+                    <!-- Quick actions -->
+                    <div class="settings-card" style="margin-bottom:1.5rem;">
+                        <div class="settings-card-header">
+                            <div class="sch-icon" style="background:rgba(13,148,136,.1);color:#0d9488;">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <h5>Quick Actions</h5>
+                        </div>
+                        <div class="settings-card-body" style="padding:1.125rem 1.375rem;">
+                            <div class="action-btn-list">
+                                <a href="{% url 'accounts:profile_edit' %}">
+                                    <i class="fas fa-user-edit"></i> Edit Profile
+                                </a>
+                                <a href="{% url 'accounts:documents' %}">
+                                    <i class="fas fa-folder-open"></i> Manage Documents
+                                </a>
+                                <button onclick="downloadData()">
+                                    <i class="fas fa-download"></i> Download My Data
+                                </button>
+                                <button onclick="exportData()">
+                                    <i class="fas fa-file-export"></i> Export Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account statistics -->
+                    <div class="settings-card" style="margin-bottom:1.5rem;">
+                        <div class="settings-card-header">
+                            <div class="sch-icon" style="background:rgba(139,92,246,.1);color:#8b5cf6;">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <h5>Account Statistics</h5>
+                        </div>
+                        <div class="settings-card-body" style="padding:1.125rem 1.375rem;">
+                            <div class="stat-list">
+                                <div class="stat-list-item">
+                                    <span>Account Age</span>
+                                    <strong>{{ account_age|default:"—" }}</strong>
+                                </div>
+                                <div class="stat-list-item">
+                                    <span>Total Applications</span>
+                                    <strong>{{ total_applications|default:0 }}</strong>
+                                </div>
+                                <div class="stat-list-item">
+                                    <span>Active Loans</span>
+                                    <strong>{{ active_loans|default:0 }}</strong>
+                                </div>
+                                <div class="stat-list-item">
+                                    <span>Documents Uploaded</span>
+                                    <strong>{{ document_count|default:0 }}</strong>
+                                </div>
+                                <div class="stat-list-item">
+                                    <span>Last Login</span>
+                                    <strong>{{ user.last_login|date:"M d, Y"|default:"Never" }}</strong>
+                                </div>
+                                <div class="stat-list-item">
+                                    <span>Member Since</span>
+                                    <strong>{{ user.date_joined|date:"M d, Y" }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preferred language -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <div class="sch-icon" style="background:rgba(245,166,35,.1);color:var(--bs-accent);">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <h5>Language & Region</h5>
+                        </div>
+                        <div class="settings-card-body">
+                            <div class="form-field">
+                                <label for="preferredLanguage">Preferred Language</label>
+                                <select class="form-select" id="preferredLanguage" name="preferred_language"
+                                        onchange="saveLanguage(this.value)">
+                                    <option value="en" {% if user.client_profile.preferred_language == 'en' or not user.client_profile.preferred_language %}selected{% endif %}>
+                                        English
+                                    </option>
+                                    <option value="sw" {% if user.client_profile.preferred_language == 'sw' %}selected{% endif %}>
+                                        Kiswahili
+                                    </option>
+                                </select>
+                                <span class="hint">Language for emails and portal interface</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div><!-- /row -->
+
+        </div><!-- /dash-inner -->
+    </div><!-- /dash-content -->
+</div><!-- /dash-layout -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Sidebar ── */
+function openSidebar() {
+    document.getElementById('bsSidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('show');
+}
+function closeSidebar() {
+    document.getElementById('bsSidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+/* ── Generic AJAX form submitter ── */
+function submitForm(formId, url, btnId, successMsg) {
+    const form = document.getElementById(formId);
+    const btn  = document.getElementById(btnId);
+    if (!form || !btn) return;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const orig = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving…';
+
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                btn.innerHTML = '<i class="fas fa-check me-2"></i>' + (successMsg || 'Saved!');
+                btn.style.background = '#10b981';
+                btn.style.borderColor = '#10b981';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                    btn.style.background = '';
+                    btn.style.borderColor = '';
+                }, 2000);
+            } else {
+                alert(data.message || 'An error occurred. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = orig;
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        });
+    });
+}
+
+submitForm('accountSettingsForm', '{% url "accounts:settings" %}', 'accountSaveBtn', 'Saved!');
+submitForm('notificationForm',    '{% url "accounts:settings" %}', 'notifSaveBtn',   'Saved!');
+
+/* ── Password form ── */
+document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const btn = document.getElementById('pwSaveBtn');
+    const orig = btn.innerHTML;
+
+    if (formData.get('new_password') !== formData.get('confirm_password')) {
+        showInlineError(this, 'New passwords do not match. Please try again.');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Changing…';
+
+    fetch('{% url "accounts:change_password" %}', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            btn.innerHTML = '<i class="fas fa-check me-2"></i>Changed!';
+            btn.style.background = '#10b981';
+            btn.style.borderColor = '#10b981';
+            this.reset();
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = orig;
+                btn.style.background = '';
+                btn.style.borderColor = '';
+            }, 2000);
+        } else {
+            showInlineError(this, data.message || 'Failed to change password.');
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    });
+});
+
+function showInlineError(form, message) {
+    const existing = form.querySelector('.inline-error');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.className = 'inline-error';
+    el.style.cssText = 'background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;color:#dc2626;padding:.65rem 1rem;font-size:.85rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;';
+    el.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + message;
+    form.insertBefore(el, form.firstChild);
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/* ── Language ── */
+function saveLanguage(value) {
+    fetch('{% url "accounts:settings" %}', {
+        method: 'POST',
+        body: JSON.stringify({ preferred_language: value }),
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    }).catch(() => {});
+}
+
+/* ── Data export ── */
+function downloadData() {
+    alert('Your data download will be prepared and sent to your email address within 24 hours.');
+}
+
+function exportData() {
+    try {
+        window.open('{% url "accounts:export_data" %}', '_blank');
+    } catch (e) {
+        alert('Data export is not currently available.');
+    }
+}
+
+/* ── Danger zone ── */
+function deactivateAccount() {
+    if (!confirm('Are you sure you want to deactivate your account?\n\nYou can reactivate it later by contacting our support team.')) return;
+
+    fetch('{% url "accounts:deactivate_account" %}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Your account has been deactivated. You will now be signed out.');
+            window.location.href = '{% url "accounts:logout" %}';
+        } else {
+            alert(data.message || 'Failed to deactivate account. Please try again.');
+        }
+    })
+    .catch(() => alert('An error occurred. Please try again.'));
+}
+
+function deleteAccount() {
+    const confirmation = prompt(
+        'This action is PERMANENT and cannot be undone.\n\nAll your data, applications, and documents will be permanently deleted.\n\nType DELETE to confirm:'
+    );
+    if (confirmation !== 'DELETE') {
+        if (confirmation !== null) alert('Confirmation text does not match. Account deletion cancelled.');
+        return;
+    }
+
+    fetch('{% url "accounts:delete_account" %}', {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Your account has been permanently deleted. Thank you for using Berit Shalvah.');
+            window.location.href = '{% url "home" %}';
+        } else {
+            alert(data.message || 'Failed to delete account. Please contact support.');
+        }
+    })
+    .catch(() => alert('An error occurred. Please contact support directly.'));
+}
+</script>
+{% endblock %}

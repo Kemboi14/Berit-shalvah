@@ -1,0 +1,1063 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Application {{ application.reference_number|default:"Detail" }} — Berit Shalvah{% endblock %}
+{% block nav_loans %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dash-layout {
+        display: flex;
+        min-height: calc(100vh - 64px);
+    }
+    .dash-content {
+        flex: 1;
+        margin-left: 260px;
+        background: var(--gray-50);
+        min-height: calc(100vh - 64px);
+        display: flex;
+        flex-direction: column;
+    }
+    .dash-inner {
+        padding: 2rem;
+        flex: 1;
+    }
+
+    /* ── Page header ── */
+    .bs-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .bs-page-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin: 0;
+        letter-spacing: -.02em;
+    }
+    .bs-page-header .breadcrumb {
+        font-size: .8rem;
+        margin: .25rem 0 0;
+        padding: 0;
+        background: none;
+        display: flex;
+        gap: .35rem;
+        align-items: center;
+        list-style: none;
+    }
+    .bs-page-header .breadcrumb-item + .breadcrumb-item::before {
+        content: '/';
+        color: var(--gray-300);
+    }
+    .bs-page-header .breadcrumb-item a { color: var(--bs-primary); text-decoration: none; }
+    .bs-page-header .breadcrumb-item a:hover { text-decoration: underline; }
+    .bs-page-header .breadcrumb-item.active { color: var(--gray-500); }
+    .header-actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+
+    /* ── Status hero ── */
+    .status-hero {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-100);
+        padding: 1.75rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1.25rem;
+        box-shadow: var(--shadow-sm);
+    }
+    .status-hero-icon {
+        width: 56px; height: 56px;
+        border-radius: var(--radius-lg);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.375rem;
+        flex-shrink: 0;
+    }
+    .status-hero-icon.draft        { background: #f1f5f9; color: #64748b; }
+    .status-hero-icon.submitted    { background: #eff6ff; color: #3b82f6; }
+    .status-hero-icon.under_review { background: #fffbeb; color: #d97706; }
+    .status-hero-icon.approved     { background: #f0fdf4; color: #16a34a; }
+    .status-hero-icon.rejected     { background: #fef2f2; color: #dc2626; }
+    .status-hero-icon.disbursed    { background: #eef2ff; color: #4f46e5; }
+    .status-hero-icon.active       { background: #f0fdf4; color: #059669; }
+    .status-hero-icon.closed       { background: #f8fafc; color: #94a3b8; }
+    .status-hero-icon.defaulted    { background: #fff1f2; color: #be123c; }
+    .status-hero-body { flex: 1; min-width: 0; }
+    .status-hero-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin: 0 0 .2rem;
+    }
+    .status-hero-sub {
+        font-size: .875rem;
+        color: var(--gray-500);
+        margin: 0 0 1.25rem;
+    }
+    .status-pill {
+        display: inline-flex; align-items: center; gap: .4rem;
+        padding: .3rem .8rem;
+        border-radius: 100px;
+        font-size: .75rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .04em;
+    }
+    .status-pill::before {
+        content: '';
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .status-draft        { background: #f1f5f9; color: #64748b; }
+    .status-submitted    { background: #eff6ff; color: #3b82f6; }
+    .status-under_review { background: #fffbeb; color: #d97706; }
+    .status-approved     { background: #f0fdf4; color: #16a34a; }
+    .status-active       { background: #f0fdf4; color: #059669; }
+    .status-rejected     { background: #fef2f2; color: #dc2626; }
+    .status-closed       { background: #f8fafc; color: #94a3b8; }
+    .status-disbursed    { background: #eef2ff; color: #4f46e5; }
+    .status-defaulted    { background: #fff1f2; color: #be123c; }
+
+    /* ── Progress bar ── */
+    .progress-track {
+        position: relative;
+        height: 6px;
+        background: var(--gray-100);
+        border-radius: 100px;
+        overflow: hidden;
+        margin: .75rem 0 .5rem;
+    }
+    .progress-fill {
+        height: 100%;
+        border-radius: 100px;
+        background: linear-gradient(90deg, var(--bs-primary) 0%, var(--bs-accent) 100%);
+        transition: width .6s ease;
+    }
+    .progress-steps-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: .7rem;
+        color: var(--gray-400);
+    }
+
+    /* ── Info cards ── */
+    .info-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-100);
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .info-card-header {
+        padding: .9rem 1.375rem;
+        border-bottom: 1px solid var(--gray-100);
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+    .info-card-header h5 {
+        font-size: .9rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+    }
+    .info-card-header h5 i { color: var(--bs-primary); font-size: .8rem; }
+    .info-card-body { padding: 1.25rem 1.375rem; }
+
+    /* ── Info grid ── */
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem 2rem;
+    }
+    .info-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .info-item {}
+    .info-label {
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--gray-400);
+        margin-bottom: .2rem;
+    }
+    .info-value {
+        font-size: .9rem;
+        color: var(--gray-800);
+        font-weight: 500;
+    }
+    .info-value.mono {
+        font-family: monospace;
+        font-size: .85rem;
+        color: var(--bs-primary);
+        font-weight: 700;
+    }
+    .info-value.kes { color: var(--gray-900); font-weight: 700; }
+
+    /* ── Documents grid ── */
+    .doc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+    .doc-item {
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+        padding: .875rem 1rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--gray-100);
+        background: var(--gray-50);
+        transition: var(--trans-base);
+    }
+    .doc-item:hover { border-color: var(--bs-primary); background: #fff; }
+    .doc-item-icon {
+        width: 36px; height: 36px;
+        border-radius: var(--radius-base);
+        background: rgba(var(--bs-primary-rgb),.08);
+        color: var(--bs-primary);
+        display: flex; align-items: center; justify-content: center;
+        font-size: .875rem;
+        flex-shrink: 0;
+    }
+    .doc-item-info { flex: 1; min-width: 0; }
+    .doc-item-type { font-size: .8rem; font-weight: 700; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .doc-item-date { font-size: .72rem; color: var(--gray-500); margin-top: .1rem; }
+    .doc-item-badge {
+        display: inline-block;
+        padding: .15rem .5rem;
+        border-radius: 100px;
+        font-size: .68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-top: .3rem;
+    }
+    .doc-badge-verified   { background: #f0fdf4; color: #16a34a; }
+    .doc-badge-pending    { background: #fffbeb; color: #d97706; }
+    .doc-badge-rejected   { background: #fef2f2; color: #dc2626; }
+
+    /* ── Repayment table ── */
+    .bs-table { width: 100%; border-collapse: collapse; }
+    .bs-table th {
+        font-size: .7rem;
+        font-weight: 700;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        padding: .55rem 1rem;
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-100);
+        white-space: nowrap;
+    }
+    .bs-table td {
+        padding: .8rem 1rem;
+        font-size: .875rem;
+        color: var(--gray-700);
+        border-bottom: 1px solid var(--gray-50);
+        vertical-align: middle;
+    }
+    .bs-table tbody tr:hover { background: var(--gray-50); }
+    .bs-table tbody tr:last-child td { border-bottom: none; }
+    .inst-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px; height: 24px;
+        border-radius: 50%;
+        background: rgba(var(--bs-primary-rgb),.1);
+        color: var(--bs-primary);
+        font-size: .75rem;
+        font-weight: 700;
+    }
+    .pay-status {
+        display: inline-flex; align-items: center; gap: .3rem;
+        padding: .2rem .6rem;
+        border-radius: 100px;
+        font-size: .7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .04em;
+    }
+    .pay-pending  { background: #fffbeb; color: #d97706; }
+    .pay-paid     { background: #f0fdf4; color: #16a34a; }
+    .pay-overdue  { background: #fef2f2; color: #dc2626; }
+
+    /* ── Collateral items ── */
+    .collateral-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--gray-50);
+    }
+    .collateral-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .collateral-item:first-child { padding-top: 0; }
+    .collateral-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: .5rem;
+    }
+    .collateral-type {
+        font-size: .875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+    .collateral-value {
+        font-size: .9rem;
+        font-weight: 800;
+        color: var(--bs-primary);
+    }
+    .collateral-desc { font-size: .8rem; color: var(--gray-500); }
+
+    /* ── Sidebar action card ── */
+    .action-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-100);
+        margin-bottom: 1.25rem;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .action-card-header {
+        padding: .875rem 1.25rem;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    .action-card-header h5 {
+        font-size: .875rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+    .action-card-body {
+        padding: 1.125rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: .625rem;
+        padding: .625rem .875rem;
+        border-radius: var(--radius-base);
+        font-size: .875rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1.5px solid transparent;
+        transition: var(--trans-base);
+        background: none;
+        width: 100%;
+        text-align: left;
+    }
+    .action-btn.primary {
+        background: var(--bs-primary);
+        color: #fff;
+        border-color: var(--bs-primary);
+    }
+    .action-btn.primary:hover { opacity: .88; color: #fff; }
+    .action-btn.success {
+        background: #10b981;
+        color: #fff;
+        border-color: #10b981;
+    }
+    .action-btn.success:hover { opacity: .88; color: #fff; }
+    .action-btn.outline {
+        background: #fff;
+        color: var(--gray-700);
+        border-color: var(--gray-200);
+    }
+    .action-btn.outline:hover { border-color: var(--bs-primary); color: var(--bs-primary); background: rgba(var(--bs-primary-rgb),.04); }
+    .action-btn.danger {
+        background: #fff;
+        color: #dc2626;
+        border-color: #fecaca;
+    }
+    .action-btn.danger:hover { background: #fef2f2; }
+
+    /* ── Notes card ── */
+    .notes-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .5rem; }
+    .notes-list li {
+        font-size: .8rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: flex-start;
+        gap: .5rem;
+    }
+    .notes-list li::before {
+        content: '';
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        margin-top: .45rem;
+        flex-shrink: 0;
+    }
+
+    /* ── Empty / not found ── */
+    .not-found {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    .not-found .nf-icon {
+        width: 72px; height: 72px;
+        border-radius: 50%;
+        background: #fffbeb;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 1.75rem;
+        color: #d97706;
+        margin-bottom: 1.25rem;
+    }
+    .not-found h4 {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin-bottom: .5rem;
+    }
+    .not-found p { font-size: .9rem; color: var(--gray-500); margin-bottom: 1.5rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 991.98px) {
+        .dash-content { margin-left: 0; }
+        .dash-inner   { padding: 1.25rem; }
+        .info-grid    { grid-template-columns: 1fr; gap: .75rem; }
+        .info-grid.three { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 575.98px) {
+        .info-grid.three { grid-template-columns: 1fr; }
+        .doc-grid { grid-template-columns: 1fr; }
+        .header-actions { width: 100%; }
+        .header-actions .action-btn { flex: 1; }
+    }
+    @media print {
+        .bs-sidebar, .bs-navbar, .bs-footer, .action-card,
+        .header-actions, .d-lg-none { display: none !important; }
+        .dash-content { margin-left: 0 !important; }
+    }
+</style>
+{% endblock %}
+
+{% block full_content %}
+<div class="dash-layout">
+
+    <!-- ══════ SIDEBAR ══════ -->
+    <aside class="bs-sidebar" id="bsSidebar">
+        <div class="sidebar-user">
+            <div class="avatar">
+                {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+            </div>
+            <div style="min-width:0;">
+                <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                <div class="user-role">Client Account</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section-title">Main</div>
+        <nav>
+            <a href="{% url 'dashboard:home' %}" class="nav-link active">
+                <i class="fas fa-th-large"></i>Dashboard
+            </a>
+            <a href="{% url 'loans:modern_application' %}" class="nav-link">
+                <i class="fas fa-plus-circle"></i>Apply for Loan
+            </a>
+            <a href="{% url 'loans:application_list' %}" class="nav-link active">
+                <i class="fas fa-file-contract"></i>My Loans
+            </a>
+        </nav>
+
+        <div class="sidebar-section-title">Account</div>
+        <nav>
+            <a href="{% url 'accounts:profile' %}" class="nav-link">
+                <i class="fas fa-user"></i>My Profile
+            </a>
+            <a href="{% url 'accounts:documents' %}" class="nav-link">
+                <i class="fas fa-folder"></i>My Documents
+            </a>
+            <a href="{% url 'accounts:settings' %}" class="nav-link">
+                <i class="fas fa-cog"></i>Settings
+            </a>
+        </nav>
+
+        {% if request.user.is_staff %}
+        <div class="sidebar-section-title">Administration</div>
+        <nav>
+            <a href="{% url 'dashboard:staff' %}" class="nav-link">
+                <i class="fas fa-users-cog"></i>Staff Dashboard
+            </a>
+            <a href="{% url 'admin:index' %}" class="nav-link">
+                <i class="fas fa-tools"></i>Django Admin
+            </a>
+        </nav>
+        {% endif %}
+
+        <hr>
+        <nav>
+            <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="nav-link" style="color:rgba(255,100,100,.7);background:none;border:none;width:100%;text-align:left;cursor:pointer;padding:0;"><i class="fas fa-sign-out-alt"></i>Sign Out</button></form>
+        </nav>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- ══════ MAIN CONTENT ══════ -->
+    <div class="dash-content">
+
+        <!-- Mobile top bar -->
+        <div class="d-lg-none d-flex align-items-center justify-content-between px-3 py-2"
+             style="background:#fff;border-bottom:1px solid var(--gray-200);">
+            <button onclick="openSidebar()" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span style="font-weight:700;font-size:.9rem;color:var(--gray-900);">Application Detail</span>
+            <a href="{% url 'loans:application_list' %}" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+        </div>
+
+        <div class="dash-inner">
+
+            <!-- ── Page header ── -->
+            <div class="bs-page-header">
+                <div>
+                    <h1>
+                        <i class="fas fa-file-contract me-2" style="color:var(--bs-primary);font-size:1.2rem;"></i>
+                        {% if application %}
+                            {{ application.reference_number }}
+                        {% else %}
+                            Application Detail
+                        {% endif %}
+                    </h1>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'loans:application_list' %}">My Loans</a></li>
+                        <li class="breadcrumb-item active">{{ application.reference_number|default:"Detail" }}</li>
+                    </ol>
+                </div>
+                {% if application %}
+                <div class="header-actions d-none d-lg-flex">
+                    <button onclick="window.print()" class="action-btn outline" style="width:auto;">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    {% if application.status == 'draft' %}
+                    <a href="{% url 'loans:modern_application' %}?edit={{ application.id }}" class="action-btn primary" style="width:auto;">
+                        <i class="fas fa-edit"></i> Edit Application
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            {% if application %}
+
+            <div class="row g-4">
+
+                <!-- ══════ LEFT COLUMN ══════ -->
+                <div class="col-lg-8">
+
+                    <!-- ── Status Hero ── -->
+                    <div class="status-hero">
+                        <div class="status-hero-icon {{ application.status }}">
+                            {% if application.status == 'draft' %}
+                                <i class="fas fa-pencil-alt"></i>
+                            {% elif application.status == 'submitted' %}
+                                <i class="fas fa-paper-plane"></i>
+                            {% elif application.status == 'under_review' %}
+                                <i class="fas fa-search"></i>
+                            {% elif application.status == 'approved' %}
+                                <i class="fas fa-check-circle"></i>
+                            {% elif application.status == 'rejected' %}
+                                <i class="fas fa-times-circle"></i>
+                            {% elif application.status == 'disbursed' %}
+                                <i class="fas fa-money-bill-wave"></i>
+                            {% elif application.status == 'active' %}
+                                <i class="fas fa-play-circle"></i>
+                            {% elif application.status == 'closed' %}
+                                <i class="fas fa-archive"></i>
+                            {% elif application.status == 'defaulted' %}
+                                <i class="fas fa-exclamation-triangle"></i>
+                            {% else %}
+                                <i class="fas fa-question-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="status-hero-body">
+                            <div class="d-flex align-items-center gap-3 flex-wrap mb-1">
+                                <p class="status-hero-title mb-0">{{ application.get_status_display }}</p>
+                                <span class="status-pill status-{{ application.status }}">{{ application.get_status_display }}</span>
+                            </div>
+                            <p class="status-hero-sub">
+                                Applied {{ application.created_at|date:"M d, Y" }}
+                                {% if application.updated_at != application.created_at %}
+                                &nbsp;·&nbsp; Updated {{ application.updated_at|date:"M d, Y" }}
+                                {% endif %}
+                            </p>
+                            <!-- Progress bar -->
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width:
+                                    {% if application.status == 'draft' %}8%
+                                    {% elif application.status == 'submitted' %}25%
+                                    {% elif application.status == 'under_review' %}50%
+                                    {% elif application.status == 'approved' %}72%
+                                    {% elif application.status == 'disbursed' or application.status == 'active' %}100%
+                                    {% elif application.status == 'closed' %}100%
+                                    {% else %}25%{% endif %}
+                                ;"></div>
+                            </div>
+                            <div class="progress-steps-labels">
+                                <span>Draft</span>
+                                <span>Submitted</span>
+                                <span>Under Review</span>
+                                <span>Approved</span>
+                                <span>Disbursed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Loan Details ── -->
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <h5><i class="fas fa-hand-holding-usd"></i></h5> Loan Details</h5>
+                        </div>
+                        <div class="info-card-body">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Reference Number</div>
+                                    <div class="info-value mono">{{ application.reference_number }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Loan Amount</div>
+                                    <div class="info-value kes">KES {{ application.loan_amount|floatformat:0 }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Duration</div>
+                                    <div class="info-value">{{ application.loan_duration }} month{{ application.loan_duration|pluralize }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Interest Rate</div>
+                                    <div class="info-value">{{ application.interest_rate|default:"—" }}%</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Monthly Repayment</div>
+                                    <div class="info-value kes">KES {{ application.monthly_repayment|floatformat:0 }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Total Repayable</div>
+                                    <div class="info-value kes">KES {{ application.total_repayable|floatformat:0 }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Legal Fee</div>
+                                    <div class="info-value">KES {{ application.legal_fee|floatformat:0 }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Required Collateral</div>
+                                    <div class="info-value">KES {{ application.collateral_required|floatformat:0 }}</div>
+                                </div>
+                            </div>
+                            {% if application.loan_purpose %}
+                            <hr style="border-color:var(--gray-100);margin:1.25rem 0;">
+                            <div class="info-item">
+                                <div class="info-label">Loan Purpose</div>
+                                <div class="info-value" style="line-height:1.6;">{{ application.loan_purpose }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- ── Personal Information ── -->
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <h5><i class="fas fa-id-card"></i> Personal Information</h5>
+                        </div>
+                        <div class="info-card-body">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Full Name</div>
+                                    <div class="info-value">{{ application.user.get_full_name|default:application.user.username }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Email Address</div>
+                                    <div class="info-value">{{ application.user.email }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Phone Number</div>
+                                    <div class="info-value">{{ application.user.phone|default:"Not provided" }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">National ID</div>
+                                    <div class="info-value">{{ application.user.national_id|default:"Not provided" }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">KRA PIN</div>
+                                    <div class="info-value">{{ application.user.kra_pin|default:"Not provided" }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Date of Birth</div>
+                                    <div class="info-value">{{ application.user.date_of_birth|date:"M d, Y"|default:"Not provided" }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Monthly Income</div>
+                                    <div class="info-value">
+                                        {% if application.user.client_profile.monthly_income %}
+                                            KES {{ application.user.client_profile.monthly_income|floatformat:0 }}
+                                        {% else %}
+                                            Not provided
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Application Date</div>
+                                    <div class="info-value">{{ application.created_at|date:"M d, Y H:i" }}</div>
+                                </div>
+                            </div>
+
+                            {% if application.employment_type %}
+                            <hr style="border-color:var(--gray-100);margin:1.25rem 0;">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Employment Type</div>
+                                    <div class="info-value">{{ application.get_employment_type_display }}</div>
+                                </div>
+                                {% if application.employment_data.employer_name %}
+                                <div class="info-item">
+                                    <div class="info-label">Employer</div>
+                                    <div class="info-value">{{ application.employment_data.employer_name }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- ── Documents ── -->
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <h5><i class="fas fa-folder-open"></i> Uploaded Documents</h5>
+                        </div>
+                        <div class="info-card-body">
+                            {% if application.documents.all %}
+                            <div class="doc-grid">
+                                {% for document in application.documents.all %}
+                                <div class="doc-item">
+                                    <div class="doc-item-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="doc-item-info">
+                                        <div class="doc-item-type">{{ document.get_document_type_display }}</div>
+                                        <div class="doc-item-date">{{ document.uploaded_at|date:"M d, Y" }}</div>
+                                        {% if document.is_verified %}
+                                            <span class="doc-item-badge doc-badge-verified">Verified</span>
+                                        {% else %}
+                                            <span class="doc-item-badge doc-badge-pending">Pending</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if document.file %}
+                                    <a href="{{ document.file.url }}" target="_blank"
+                                       style="font-size:.75rem;color:var(--bs-primary);font-weight:600;text-decoration:none;white-space:nowrap;align-self:center;">
+                                        View <i class="fas fa-external-link-alt fa-xs"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div style="text-align:center;padding:1.5rem;color:var(--gray-400);">
+                                <i class="fas fa-folder-open fa-2x mb-2 d-block"></i>
+                                <span style="font-size:.875rem;">No documents uploaded yet.</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- ── Collateral ── -->
+                    {% if application.collaterals.all %}
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <h5><i class="fas fa-building"></i> Collateral Information</h5>
+                        </div>
+                        <div class="info-card-body">
+                            {% for collateral in application.collaterals.all %}
+                            <div class="collateral-item">
+                                <div class="collateral-header">
+                                    <span class="collateral-type">
+                                        {{ collateral.get_collateral_type_display }}
+                                    </span>
+                                    <span class="collateral-value">
+                                        KES {{ collateral.estimated_value|floatformat:0 }}
+                                    </span>
+                                </div>
+                                {% if collateral.description %}
+                                <div class="collateral-desc">{{ collateral.description }}</div>
+                                {% endif %}
+                                {% if collateral.location %}
+                                <div class="collateral-desc mt-1">
+                                    <i class="fas fa-map-marker-alt fa-xs" style="color:var(--gray-400);"></i>
+                                    {{ collateral.location }}
+                                </div>
+                                {% endif %}
+                                {% if collateral.is_verified %}
+                                    <span class="doc-item-badge doc-badge-verified" style="margin-top:.375rem;display:inline-block;">Verified</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- ── Guarantors ── -->
+                    {% if application.guarantors.all %}
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <h5><i class="fas fa-user-friends"></i> Guarantors</h5>
+                        </div>
+                        <div class="info-card-body">
+                            {% for guarantor in application.guarantors.all %}
+                            <div class="collateral-item">
+                                <div class="collateral-header">
+                                    <span class="collateral-type">{{ guarantor.full_name }}</span>
+                                    <span style="font-size:.8rem;color:var(--gray-500);">{{ guarantor.get_relationship_display }}</span>
+                                </div>
+                                <div class="info-grid" style="margin-top:.5rem;">
+                                    <div class="info-item">
+                                        <div class="info-label">Phone</div>
+                                        <div class="info-value">{{ guarantor.phone|default:"—" }}</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">National ID</div>
+                                        <div class="info-value">{{ guarantor.national_id|default:"—" }}</div>
+                                    </div>
+                                    {% if guarantor.monthly_income %}
+                                    <div class="info-item">
+                                        <div class="info-label">Monthly Income</div>
+                                        <div class="info-value">KES {{ guarantor.monthly_income|floatformat:0 }}</div>
+                                    </div>
+                                    {% endif %}
+                                    {% if guarantor.occupation %}
+                                    <div class="info-item">
+                                        <div class="info-label">Occupation</div>
+                                        <div class="info-value">{{ guarantor.occupation }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- ── Repayment Schedule ── -->
+                    {% if application.repayment_schedule.all %}
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <h5><i class="fas fa-calendar-alt"></i> Repayment Schedule</h5>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="bs-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Due Date</th>
+                                        <th>Amount</th>
+                                        <th>Principal</th>
+                                        <th>Interest</th>
+                                        <th>Status</th>
+                                        <th>Paid</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for schedule in application.repayment_schedule.all %}
+                                    <tr>
+                                        <td><span class="inst-badge">{{ schedule.installment_number }}</span></td>
+                                        <td>{{ schedule.due_date|date:"M d, Y" }}</td>
+                                        <td style="font-weight:600;">KES {{ schedule.amount|floatformat:0 }}</td>
+                                        <td>KES {{ schedule.principal_amount|floatformat:0 }}</td>
+                                        <td>KES {{ schedule.interest_amount|floatformat:0 }}</td>
+                                        <td>
+                                            <span class="pay</td>-status
+                                                {% if schedule.status == 'paid' %}pay-paid
+                                                {% elif schedule.status == 'overdue' %}pay-overdue
+                                                {% else %}pay-pending{% endif %}">
+                                                {{ schedule.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if schedule.amount_paid %}
+                                                KES {{ schedule.amount_paid|floatformat:0 }}
+                                            {% else %}
+                                                <span style="color:var(--gray-400);">—</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                <!-- ══════ RIGHT COLUMN ══════ -->
+                <div class="col-lg-4">
+
+                    <!-- Quick Actions -->
+                    <div class="action-card">
+                        <div class="action-card-header">
+                            <h5><i class="fas fa-bolt me-2" style="color:var(--bs-accent);font-size:.8rem;"></i>Quick Actions</h5>
+                        </div>
+                        <div class="action-card-body">
+                            {% if application.status == 'draft' %}
+                            <a href="{% url 'loans:modern_application' %}?edit={{ application.id }}" class="action-btn primary">
+                                <i class="fas fa-edit"></i> Edit Application
+                            </a>
+                            {% endif %}
+
+                            {% if application.status == 'approved' %}
+                            <button class="action-btn success" onclick="acceptLoan('{{ application.id }}')">
+                                <i class="fas fa-check"></i> Accept Loan Offer
+                            </button>
+                            {% endif %}
+
+                            <a href="{% url 'loans:repayment_schedule' application.id %}" class="action-btn outline">
+                                <i class="fas fa-calendar-alt"></i> View Repayment Schedule
+                            </a>
+
+                            <a href="{% url 'loans:download_agreement' application.id %}" class="action-btn outline">
+                                <i class="fas fa-download"></i> Download Agreement
+                            </a>
+
+                            <a href="{% url 'loans:application_list' %}" class="action-btn outline">
+                                <i class="fas fa-list"></i> All Applications
+                            </a>
+
+                            <button class="action-btn outline" onclick="window.print()">
+                                <i class="fas fa-print"></i> Print Application
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Loan Summary -->
+                    <div class="action-card">
+                        <div class="action-card-header">
+                            <h5><i class="fas fa-chart-pie me-2" style="color:var(--bs-primary);font-size:.8rem;"></i>Loan Summary</h5>
+                        </div>
+                        <div class="action-card-body" style="gap:.625rem;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:.375rem 0;border-bottom:1px solid var(--gray-50);">
+                                <span style="font-size:.825rem;color:var(--gray-600);">Principal</span>
+                                <strong style="font-size:.9rem;color:var(--gray-900);">KES {{ application.loan_amount|floatformat:0 }}</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:.375rem 0;border-bottom:1px solid var(--gray-50);">
+                                <span style="font-size:.825rem;color:var(--gray-600);">Interest Rate</span>
+                                <strong style="font-size:.9rem;color:var(--gray-900);">{{ application.interest_rate|default:"—" }}%</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:.375rem 0;border-bottom:1px solid var(--gray-50);">
+                                <span style="font-size:.825rem;color:var(--gray-600);">Duration</span>
+                                <strong style="font-size:.9rem;color:var(--gray-900);">{{ application.loan_duration }} months</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:.375rem 0;border-bottom:1px solid var(--gray-50);">
+                                <span style="font-size:.825rem;color:var(--gray-600);">Monthly Payment</span>
+                                <strong style="font-size:.9rem;color:var(--bs-primary);">KES {{ application.monthly_repayment|floatformat:0 }}</strong>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;background:var(--gray-50);border-radius:var(--radius-base);padding:.625rem .75rem;margin-top:.25rem;">
+                                <span style="font-size:.825rem;font-weight:700;color:var(--gray-700);">Total Repayable</span>
+                                <strong style="font-size:1rem;color:var(--gray-900);">KES {{ application.total_repayable|floatformat:0 }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Support -->
+                    <div class="action-card">
+                        <div class="action-card-header">
+                            <h5><i class="fas fa-headset me-2" style="color:#0d9488;font-size:.8rem;"></i>Need Help?</h5>
+                        </div>
+                        <div class="action-card-body">
+                            <p style="font-size:.8rem;color:var(--gray-500);margin:0 0 .75rem;">
+                                Contact our support team for questions about your application.
+                            </p>
+                            <a href="tel:+254XXXXXXXXX" class="action-btn outline">
+                                <i class="fas fa-phone" style="color:#0d9488;"></i> Call Support
+                            </a>
+                            <a href="mailto:beritfinance@gmail.com" class="action-btn outline">
+                                <i class="fas fa-envelope" style="color:var(--bs-primary);"></i> Email Support
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Important Notes -->
+                    <div class="action-card">
+                        <div class="action-card-header">
+                            <h5><i class="fas fa-info-circle me-2" style="color:var(--bs-accent);font-size:.8rem;"></i>Important Notes</h5>
+                        </div>
+                        <div style="padding:1rem 1.125rem;">
+                            <ul class="notes-list">
+                                <li>Keep your contact information updated at all times</li>
+                                <li>Respond promptly to any verification requests</li>
+                                <li>Ensure all uploaded documents are clear and valid</li>
+                                <li>Report any changes in your financial situation</li>
+                                <li>Loan repayments are due on the scheduled dates</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div><!-- /row -->
+
+            {% else %}
+            <!-- ── Application not found ── -->
+            <div class="not-found">
+                <div class="nf-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h4>Application Not Found</h4>
+                <p>The application you're looking for doesn't exist or you don't have permission to view it.</p>
+                <a href="{% url 'loans:application_list' %}" class="btn btn-primary">
+                    <i class="fas fa-list me-2"></i>View My Applications
+                </a>
+            </div>
+            {% endif %}
+
+        </div><!-- /dash-inner -->
+    </div><!-- /dash-content -->
+</div><!-- /dash-layout -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openSidebar() {
+    document.getElementById('bsSidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('show');
+}
+function closeSidebar() {
+    document.getElementById('bsSidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+function acceptLoan(applicationId) {
+    if (!confirm('Are you sure you want to accept this loan offer? This will initiate the disbursement process.')) return;
+
+    const btn = event.currentTarget;
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing…';
+
+    fetch('/portal/loans/applications/' + applicationId + '/accept/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Failed to accept loan offer. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        }
+    })
+    .catch(() => {
+        alert('An error occurred. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    });
+}
+</script>
+{% endblock %}

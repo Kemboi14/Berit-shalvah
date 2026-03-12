@@ -1,0 +1,1127 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Staff Dashboard —
+Berit Shalvah{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Dashboard layout ── */
+    .dash-layout {
+        display: flex;
+        min-height: calc(100vh - 64px);
+    }
+    .dash-content {
+        flex: 1;
+        margin-left: 260px;
+        background: var(--gray-50);
+        min-height: calc(100vh - 64px);
+        display: flex;
+        flex-direction: column;
+    }
+    .dash-inner {
+        padding: 2rem;
+        flex: 1;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .page-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        letter-spacing: -0.025em;
+        margin: 0;
+    }
+    .page-header .breadcrumb {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+        margin: 0.2rem 0 0;
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+    }
+    .page-header .breadcrumb a {
+        color: var(--bs-primary);
+        text-decoration: none;
+    }
+    .page-header .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    .header-actions {
+        display: flex;
+        gap: 0.625rem;
+        flex-wrap: wrap;
+    }
+
+    /* ── Welcome bar ── */
+    .welcome-bar {
+        background: linear-gradient(
+            135deg,
+            var(--bs-primary) 0%,
+            var(--bs-primary-light) 100%
+        );
+        border-radius: var(--radius-xl);
+        padding: 1.25rem 1.75rem;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .welcome-bar::after {
+        content: "";
+        position: absolute;
+        right: -30px;
+        bottom: -40px;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06);
+    }
+    .welcome-bar .wb-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0 0 0.2rem;
+        position: relative;
+        z-index: 1;
+    }
+    .welcome-bar .wb-sub {
+        font-size: 0.825rem;
+        color: rgba(255, 255, 255, 0.75);
+        margin: 0;
+        position: relative;
+        z-index: 1;
+    }
+    .staff-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        background: rgba(255, 255, 255, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 100px;
+        padding: 0.3rem 0.875rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ── Stat cards ── */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        padding: 1.375rem 1.5rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-100);
+        position: relative;
+        overflow: hidden;
+        transition: var(--trans-base);
+    }
+    .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        border-radius: 4px 0 0 4px;
+    }
+    .stat-card.navy::before {
+        background: var(--bs-primary);
+    }
+    .stat-card.teal::before {
+        background: #0d9488;
+    }
+    .stat-card.gold::before {
+        background: var(--bs-accent);
+    }
+    .stat-card.red::before {
+        background: #e53e3e;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+    .stat-icon.navy {
+        background: rgba(var(--bs-primary-rgb), 0.1);
+        color: var(--bs-primary);
+    }
+    .stat-icon.teal {
+        background: rgba(13, 148, 136, 0.1);
+        color: #0d9488;
+    }
+    .stat-icon.gold {
+        background: rgba(245, 166, 35, 0.1);
+        color: var(--bs-accent);
+    }
+    .stat-icon.red {
+        background: rgba(229, 62, 62, 0.1);
+        color: #e53e3e;
+    }
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        line-height: 1;
+        margin-bottom: 0.3rem;
+        letter-spacing: -0.03em;
+    }
+    .stat-label {
+        font-size: 0.78rem;
+        color: var(--gray-500);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .stat-delta {
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 0.4rem;
+    }
+    .stat-delta.up {
+        color: #10b981;
+    }
+    .stat-delta.down {
+        color: #e53e3e;
+    }
+
+    /* ── Section header ── */
+    .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+    .section-head h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+    .section-head a {
+        font-size: 0.8rem;
+        color: var(--bs-primary);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .section-head a:hover {
+        text-decoration: underline;
+    }
+
+    /* ── Card base ── */
+    .bs-card {
+        background: #fff;
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--gray-100);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    .bs-card .card-head {
+        padding: 1rem 1.375rem;
+        border-bottom: 1px solid var(--gray-100);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .bs-card .card-head h4 {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+    .bs-card .card-body {
+        padding: 1.375rem;
+    }
+
+    /* ── Table ── */
+    .bs-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .bs-table th {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.6rem 1rem;
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-100);
+        white-space: nowrap;
+    }
+    .bs-table td {
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        border-bottom: 1px solid var(--gray-50);
+        vertical-align: middle;
+    }
+    .bs-table tbody tr:hover {
+        background: var(--gray-50);
+    }
+    .bs-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .ref-code {
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: var(--bs-primary);
+        font-weight: 600;
+    }
+    .applicant-meta small {
+        color: var(--gray-400);
+        font-size: 0.75rem;
+        display: block;
+    }
+
+    /* ── Status pills ── */
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.7rem;
+        border-radius: 100px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+    }
+    .status-pill::before {
+        content: "";
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .status-draft {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+    .status-submitted {
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+    .status-under_review {
+        background: #fffbeb;
+        color: #d97706;
+    }
+    .status-approved {
+        background: #f0fdf4;
+        color: #16a34a;
+    }
+    .status-active {
+        background: #f0fdf4;
+        color: #059669;
+    }
+    .status-rejected {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+    .status-closed {
+        background: #f8fafc;
+        color: #94a3b8;
+    }
+    .status-disbursed {
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+    .status-defaulted {
+        background: #fff1f2;
+        color: #be123c;
+    }
+
+    /* ── Quick action links ── */
+    .action-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .action-list li + li {
+        border-top: 1px solid var(--gray-50);
+    }
+    .action-list a {
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        padding: 0.875rem 0;
+        text-decoration: none;
+        color: var(--gray-700);
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: var(--trans-base);
+    }
+    .action-list a:hover {
+        color: var(--bs-primary);
+        padding-left: 0.25rem;
+    }
+    .action-list .al-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: var(--radius-base);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+    }
+
+    /* ── Mini stats ── */
+    .mini-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+    }
+    .mini-stat {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.8625rem;
+        color: var(--gray-600);
+    }
+    .mini-stat strong {
+        color: var(--gray-900);
+        font-weight: 700;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+        text-align: center;
+        padding: 2.5rem 1rem;
+    }
+    .empty-state .empty-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--gray-100);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.375rem;
+        color: var(--gray-400);
+        margin-bottom: 1rem;
+    }
+    .empty-state h5 {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--gray-700);
+        margin-bottom: 0.375rem;
+    }
+    .empty-state p {
+        font-size: 0.85rem;
+        color: var(--gray-500);
+        margin-bottom: 1rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1199.98px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media (max-width: 991.98px) {
+        .dash-content {
+            margin-left: 0;
+        }
+        .dash-inner {
+            padding: 1.25rem;
+        }
+    }
+    @media (max-width: 575.98px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        .stat-value {
+            font-size: 1.375rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block full_content %}
+<div class="dash-layout">
+    <!-- ══════ SIDEBAR ══════ -->
+    <aside class="bs-sidebar" id="bsSidebar">
+        <div class="sidebar-user">
+            <div class="avatar">
+                {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+            </div>
+            <div style="min-width: 0">
+                <div class="user-name">
+                    {{ request.user.get_full_name|default:request.user.username }}
+                </div>
+                <div class="user-role">Staff</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section-title">Main</div>
+        <nav>
+            <a href="{% url 'dashboard:home' %}" class="nav-link active">
+                <i class="fas fa-th-large"></i>Dashboard
+            </a>
+            <a href="{% url 'loans:application_list' %}" class="nav-link">
+                <i class="fas fa-file-contract"></i>All Applications
+            </a>
+            <a href="{% url 'loans:modern_application' %}" class="nav-link">
+                <i class="fas fa-plus-circle"></i>New Application
+            </a>
+        </nav>
+
+        <div class="sidebar-section-title">Management</div>
+        <nav>
+            <a href="/admin/accounts/user/" class="nav-link">
+                <i class="fas fa-users"></i>Users
+            </a>
+            <a href="/admin/loans/loanapplication/" class="nav-link">
+                <i class="fas fa-folder-open"></i>Applications
+            </a>
+            <a href="/admin/loans/repaymentschedule/" class="nav-link">
+                <i class="fas fa-calendar-alt"></i>Repayments
+            </a>
+        </nav>
+
+        <div class="sidebar-section-title">Account</div>
+        <nav>
+            <a href="{% url 'accounts:profile' %}" class="nav-link">
+                <i class="fas fa-user"></i>My Profile
+            </a>
+            <a href="{% url 'accounts:settings' %}" class="nav-link">
+                <i class="fas fa-cog"></i>Settings
+            </a>
+            <a href="{% url 'admin:index' %}" class="nav-link">
+                <i class="fas fa-tools"></i>Django Admin
+            </a>
+        </nav>
+
+        <hr />
+        <nav>
+            <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">{% csrf_token %}<button type="submit" class="nav-link" style="color:rgba(255,100,100,.7);background:none;border:none;width:100%;text-align:left;cursor:pointer;padding:0;"><i class="fas fa-sign-out-alt"></i>Sign Out</button></form>
+        </nav>
+    </aside>
+
+    <!-- Overlay for mobile -->
+    <div
+        class="sidebar-overlay"
+        id="sidebarOverlay"
+        onclick="closeSidebar()"
+    ></div>
+
+    <!-- ══════ MAIN CONTENT ══════ -->
+    <div class="dash-content">
+        <!-- Mobile top bar -->
+        <div
+            class="d-lg-none d-flex align-items-center justify-content-between px-3 py-2"
+            style="background: #fff; border-bottom: 1px solid var(--gray-200)"
+        >
+            <button
+                onclick="openSidebar()"
+                class="btn btn-sm"
+                style="background: var(--gray-100); color: var(--gray-700)"
+            >
+                <i class="fas fa-bars"></i>
+            </button>
+            <span
+                style="
+                    font-weight: 700;
+                    font-size: 0.9rem;
+                    color: var(--gray-900);
+                "
+                >Staff Dashboard</span
+            >
+            <a href="{% url 'admin:index' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-tools"></i>
+            </a>
+        </div>
+
+        <div class="dash-inner">
+            <!-- ── Page header ── -->
+            <div class="page-header">
+                <div>
+                    <h1>Staff Dashboard</h1>
+                    <div class="breadcrumb">
+                        <i class="fas fa-home fa-xs"></i>
+                        <a href="{% url 'dashboard:home' %}">Home</a>
+                        <i
+                            class="fas fa-chevron-right fa-xs"
+                            style="opacity: 0.5"
+                        ></i>
+                        <span>Staff Dashboard</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a
+                        href="{% url 'loans:application_list' %}"
+                        class="btn btn-sm"
+                        style="
+                            background: var(--gray-100);
+                            color: var(--gray-700);
+                            border-radius: var(--radius-base);
+                        "
+                    >
+                        <i class="fas fa-file-contract me-1"></i>All
+                        Applications
+                    </a>
+                    <a
+                        href="{% url 'loans:modern_application' %}"
+                        class="btn btn-primary btn-sm"
+                        style="border-radius: var(--radius-base)"
+                    >
+                        <i class="fas fa-plus me-1"></i>New Application
+                    </a>
+                </div>
+            </div>
+
+            <!-- ── Welcome bar ── -->
+            <div class="welcome-bar">
+                <div>
+                    <p class="wb-title">
+                        <i
+                            class="fas fa-users-cog me-2"
+                            style="opacity: 0.8"
+                        ></i>
+                        Welcome back, {{ request.user.get_full_name|default:request.user.username }}
+                    </p>
+                    <p class="wb-sub">
+                        Clients:
+                        <strong>{{ total_users|default:0 }}</strong>
+                        &nbsp;·&nbsp; Applications:
+                        <strong>{{ total_applications|default:0 }}</strong>
+                        &nbsp;·&nbsp; Pending review:
+                        <strong
+                            >{{ pending_verifications|length|default:0 }}</strong
+                        >
+                    </p>
+                </div>
+                <span class="staff-badge">
+                    <i class="fas fa-id-badge fa-xs"></i>
+                    Staff
+                </span>
+            </div>
+
+            <!-- ── Stats grid ── -->
+            <div class="stats-grid">
+                <div class="stat-card navy">
+                    <div class="stat-icon navy">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-value">{{ total_users|default:0 }}</div>
+                    <div class="stat-label">Total Clients</div>
+                    <div class="stat-delta up">
+                        <i class="fas fa-arrow-up fa-xs"></i> {{ today_applications|default:0 }} new today
+                    </div>
+                </div>
+
+                <div class="stat-card teal">
+                    <div class="stat-icon teal">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-value">
+                        {{ portfolio_value|floatformat:0|default:0 }}
+                    </div>
+                    <div class="stat-label">Portfolio (KES)</div>
+                    <div class="stat-delta up">
+                        <i class="fas fa-arrow-up fa-xs"></i> Active loans
+                    </div>
+                </div>
+
+                <div class="stat-card gold">
+                    <div class="stat-icon gold">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-value">
+                        {{ pending_verifications|length|default:0 }}
+                    </div>
+                    <div class="stat-label">Pending Reviews</div>
+                    <div class="stat-delta up">
+                        <i class="fas fa-file-alt fa-xs"></i> {{ monthly_applications|default:0 }} this month
+                    </div>
+                </div>
+
+                <div class="stat-card red">
+                    <div class="stat-icon red">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-value">
+                        {{ overdue_repayments|default:0 }}
+                    </div>
+                    <div class="stat-label">Overdue Repayments</div>
+                    <div
+                        class="stat-delta {% if overdue_repayments %}down{% else %}up{% endif %}"
+                    >
+                        {% if overdue_repayments %}
+                        <i class="fas fa-arrow-up fa-xs"></i> Requires attention
+                        {% else %} <i class="fas fa-check fa-xs"></i> All clear
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Main two-column layout ── -->
+            <div class="row g-4">
+                <!-- LEFT: Recent Applications -->
+                <div class="col-lg-8">
+                    <div class="section-head">
+                        <h3>
+                            <i
+                                class="fas fa-file-contract me-2"
+                                style="color: var(--bs-primary)"
+                            ></i
+                            >Recent Applications
+                        </h3>
+                        <a href="{% url 'loans:application_list' %}"
+                            >View all <i class="fas fa-arrow-right fa-xs"></i
+                        ></a>
+                    </div>
+                    <div class="bs-card">
+                        <div class="card-head">
+                            <h4>Latest Submissions</h4>
+                            <span
+                                style="
+                                    font-size: 0.75rem;
+                                    color: var(--gray-500);
+                                "
+                                >{{ total_applications|default:0 }} total</span
+                            >
+                        </div>
+                        {% if recent_applications %}
+                        <div style="overflow-x: auto">
+                            <table class="bs-table">
+                                <thead>
+                                    <tr>
+                                        <th>Reference</th>
+                                        <th>Applicant</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for application in recent_applications %}
+                                    <tr>
+                                        <td>
+                                            <span class="ref-code"
+                                                >{{ application.reference_number }}</span
+                                            >
+                                        </td>
+                                        <td>
+                                            <div class="applicant-meta">
+                                                {{ application.user.get_full_name|default:application.user.username }}
+                                                <small
+                                                    >{{ application.user.email }}</small
+                                                >
+                                            </div>
+                                        </td>
+                                        <td style="font-weight: 600">
+                                            KES {{ application.loan_amount|floatformat:0 }}
+                                        </td>
+                                        <td>
+                                            <span
+                                                class="status-pill status-{{ application.status }}"
+                                            >
+                                                {{ application.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td style="color: var(--gray-500)">
+                                            {{ application.created_at|date:"M d, Y" }}
+                                        </td>
+                                        <td>
+                                            <a
+                                                href="{% url 'loans:application_detail' application.id %}"
+                                                class="btn btn-sm"
+                                                style="
+                                                    background: var(--gray-100);
+                                                    color: var(--bs-primary);
+                                                    font-size: 0.75rem;
+                                                    padding: 0.25rem 0.6rem;
+                                                    border-radius: var(
+                                                        --radius-base
+                                                    );
+                                                "
+                                            >
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="card-body">
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <i class="fas fa-inbox"></i>
+                                </div>
+                                <h5>No applications yet</h5>
+                                <p>
+                                    Applications submitted through the portal
+                                    will appear here.
+                                </p>
+                                <a
+                                    href="{% url 'loans:modern_application' %}"
+                                    class="btn btn-primary btn-sm"
+                                >
+                                    <i class="fas fa-plus me-1"></i>New
+                                    Application
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- ── Pending verifications ── -->
+                    {% if pending_verifications %}
+                    <div class="section-head">
+                        <h3>
+                            <i
+                                class="fas fa-search me-2"
+                                style="color: #d97706"
+                            ></i
+                            >Pending Verifications
+                        </h3>
+                        <a
+                            href="/admin/loans/loanapplication/?status=under_review"
+                            >View all <i class="fas fa-arrow-right fa-xs"></i
+                        ></a>
+                    </div>
+                    <div class="bs-card">
+                        <div class="card-head">
+                            <h4>Awaiting Review</h4>
+                            <span
+                                style="
+                                    font-size: 0.75rem;
+                                    color: var(--gray-500);
+                                "
+                                >{{ pending_verifications|length }}
+                                pending</span
+                            >
+                        </div>
+                        <div style="overflow-x: auto">
+                            <table class="bs-table">
+                                <thead>
+                                    <tr>
+                                        <th>Reference</th>
+                                        <th>Applicant</th>
+                                        <th>Amount</th>
+                                        <th>Submitted</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for application in pending_verifications %}
+                                    <tr>
+                                        <td>
+                                            <span class="ref-code"
+                                                >{{ application.reference_number }}</span
+                                            >
+                                        </td>
+                                        <td>
+                                            <div class="applicant-meta">
+                                                {{ application.user.get_full_name|default:application.user.username }}
+                                                <small
+                                                    >{{ application.user.email }}</small
+                                                >
+                                            </div>
+                                        </td>
+                                        <td style="font-weight: 600">
+                                            KES {{ application.loan_amount|floatformat:0 }}
+                                        </td>
+                                        <td style="color: var(--gray-500)">
+                                            {{ application.submitted_at|date:"M d, Y" }}
+                                        </td>
+                                        <td>
+                                            <a
+                                                href="{% url 'loans:application_detail' application.id %}"
+                                                class="btn btn-sm"
+                                                style="
+                                                    background: #fffbeb;
+                                                    color: #d97706;
+                                                    font-size: 0.75rem;
+                                                    padding: 0.25rem 0.6rem;
+                                                    border-radius: var(
+                                                        --radius-base
+                                                    );
+                                                    font-weight: 600;
+                                                "
+                                            >
+                                                Review
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- RIGHT: Sidebar widgets -->
+                <div class="col-lg-4">
+                    <!-- Quick Actions -->
+                    <div class="section-head">
+                        <h3>
+                            <i
+                                class="fas fa-bolt me-2"
+                                style="color: var(--bs-accent)"
+                            ></i
+                            >Quick Actions
+                        </h3>
+                    </div>
+                    <div class="bs-card">
+                        <div class="card-body" style="padding-bottom: 0.5rem">
+                            <ul class="action-list">
+                                <li>
+                                    <a
+                                        href="{% url 'loans:application_list' %}"
+                                    >
+                                        <span
+                                            class="al-icon"
+                                            style="
+                                                background: rgba(
+                                                    var(--bs-primary-rgb),
+                                                    0.1
+                                                );
+                                                color: var(--bs-primary);
+                                            "
+                                        >
+                                            <i class="fas fa-folder-open"></i>
+                                        </span>
+                                        All Applications
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="{% url 'loans:modern_application' %}"
+                                    >
+                                        <span
+                                            class="al-icon"
+                                            style="
+                                                background: rgba(
+                                                    16,
+                                                    185,
+                                                    129,
+                                                    0.1
+                                                );
+                                                color: #10b981;
+                                            "
+                                        >
+                                            <i class="fas fa-plus-circle"></i>
+                                        </span>
+                                        New Application
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/admin/accounts/user/">
+                                        <span
+                                            class="al-icon"
+                                            style="
+                                                background: rgba(
+                                                    59,
+                                                    130,
+                                                    246,
+                                                    0.1
+                                                );
+                                                color: #3b82f6;
+                                            "
+                                        >
+                                            <i class="fas fa-users"></i>
+                                        </span>
+                                        Manage Users
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="/admin/loans/loanapplication/?status=under_review"
+                                    >
+                                        <span
+                                            class="al-icon"
+                                            style="
+                                                background: rgba(
+                                                    245,
+                                                    166,
+                                                    35,
+                                                    0.1
+                                                );
+                                                color: var(--bs-accent);
+                                            "
+                                        >
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                        Pending Reviews
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        href="/admin/loans/repaymentschedule/?status=overdue"
+                                    >
+                                        <span
+                                            class="al-icon"
+                                            style="
+                                                background: rgba(
+                                                    229,
+                                                    62,
+                                                    62,
+                                                    0.1
+                                                );
+                                                color: #e53e3e;
+                                            "
+                                        >
+                                            <i
+                                                class="fas fa-exclamation-triangle"
+                                            ></i>
+                                        </span>
+                                        Overdue Repayments
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Today's Activity -->
+                    <div class="section-head">
+                        <h3>
+                            <i
+                                class="fas fa-calendar-day me-2"
+                                style="color: #3b82f6"
+                            ></i
+                            >Today's Activity
+                        </h3>
+                    </div>
+                    <div class="bs-card">
+                        <div class="card-body">
+                            <div class="mini-stats">
+                                <div class="mini-stat">
+                                    <span>New Applications</span>
+                                    <strong
+                                        >{{ today_applications|default:0 }}</strong
+                                    >
+                                </div>
+                                <div class="mini-stat">
+                                    <span>Approvals Today</span>
+                                    <strong
+                                        >{{ today_approvals|default:0 }}</strong
+                                    >
+                                </div>
+                                <div class="mini-stat">
+                                    <span>This Month</span>
+                                    <strong
+                                        >{{ monthly_applications|default:0 }}
+                                        applications</strong
+                                    >
+                                </div>
+                                <div class="mini-stat">
+                                    <span>Monthly Approvals</span>
+                                    <strong
+                                        >{{ monthly_approvals|default:0 }}</strong
+                                    >
+                                </div>
+                                <div class="mini-stat">
+                                    <span>Total Applications</span>
+                                    <strong
+                                        >{{ total_applications|default:0 }}</strong
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Breakdown -->
+                    <div class="section-head">
+                        <h3>
+                            <i
+                                class="fas fa-chart-pie me-2"
+                                style="color: #8b5cf6"
+                            ></i
+                            >Status Breakdown
+                        </h3>
+                    </div>
+                    <div class="bs-card">
+                        <div class="card-body">
+                            <div class="mini-stats">
+                                {% for entry in applications_by_status %}
+                                <div class="mini-stat">
+                                    <span>
+                                        <span
+                                            class="status-pill status-{{ entry.status }}"
+                                            style="font-size: 0.68rem"
+                                        >
+                                            {{ entry.status|title|cut:"_" }}
+                                        </span>
+                                    </span>
+                                    <strong>{{ entry.count }}</strong>
+                                </div>
+                                {% empty %}
+                                <p
+                                    style="
+                                        font-size: 0.85rem;
+                                        color: var(--gray-500);
+                                        text-align: center;
+                                        margin: 0;
+                                    "
+                                >
+                                    No data yet
+                                </p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /row -->
+        </div>
+        <!-- /dash-inner -->
+    </div>
+    <!-- /dash-content -->
+</div>
+<!-- /dash-layout -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openSidebar() {
+        document.getElementById("bsSidebar").classList.add("open");
+        document.getElementById("sidebarOverlay").classList.add("show");
+    }
+    function closeSidebar() {
+        document.getElementById("bsSidebar").classList.remove("open");
+        document.getElementById("sidebarOverlay").classList.remove("show");
+    }
+</script>
+{% endblock %}

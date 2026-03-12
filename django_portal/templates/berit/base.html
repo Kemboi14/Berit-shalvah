@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>
+            {% block title %}Berit Shalvah Financial Services{% endblock %}
+        </title>
+
+        <!-- TailwindCSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+
+        <!-- Alpine.js -->
+        <script
+            defer
+            src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+        ></script>
+
+        <!-- Custom Styles -->
+        <style>
+            :root {
+                --primary-color: #1b3a6b;
+                --secondary-color: #2e6da4;
+                --accent-color: #f5a623;
+                --success-color: #28a745;
+                --warning-color: #ffc107;
+                --danger-color: #dc3545;
+            }
+
+            .bg-primary {
+                background-color: var(--primary-color);
+            }
+            .bg-secondary {
+                background-color: var(--secondary-color);
+            }
+            .bg-accent {
+                background-color: var(--accent-color);
+            }
+            .text-primary {
+                color: var(--primary-color);
+            }
+            .text-secondary {
+                color: var(--secondary-color);
+            }
+            .text-accent {
+                color: var(--accent-color);
+            }
+
+            .btn-primary {
+                background-color: var(--primary-color);
+                color: white;
+                padding: 0.5rem 1rem;
+                border-radius: 0.375rem;
+                font-weight: 500;
+                transition: all 0.2s;
+            }
+
+            .btn-primary:hover {
+                background-color: var(--secondary-color);
+            }
+
+            .btn-accent {
+                background-color: var(--accent-color);
+                color: white;
+                padding: 0.5rem 1rem;
+                border-radius: 0.375rem;
+                font-weight: 500;
+                transition: all 0.2s;
+            }
+
+            .btn-accent:hover {
+                opacity: 0.9;
+            }
+
+            .card {
+                background: white;
+                border-radius: 0.5rem;
+                box-shadow:
+                    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+                    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+                padding: 1.5rem;
+            }
+
+            .navbar-brand {
+                font-weight: bold;
+                font-size: 1.25rem;
+            }
+
+            .progress-bar {
+                background-color: var(--secondary-color);
+                height: 0.5rem;
+                border-radius: 0.25rem;
+            }
+        </style>
+
+        {% block extra_css %}{% endblock %}
+    </head>
+    <body class="bg-gray-50" x-data="{ mobileMenuOpen: false }">
+        <!-- Navigation -->
+        <nav class="bg-primary text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <!-- Logo -->
+                        <a
+                            href="{% url 'dashboard:home' %}"
+                            class="navbar-brand flex items-center"
+                        >
+                            <svg
+                                class="h-8 w-8 mr-2"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"
+                                />
+                            </svg>
+                            Berit Shalvah
+                        </a>
+
+                        <!-- Desktop Navigation -->
+                        <div class="hidden md:flex ml-10 space-x-8">
+                            <a
+                                href="{% url 'dashboard:home' %}"
+                                class="hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium"
+                                >Dashboard</a
+                            >
+                            {% if request.user.is_authenticated %}
+                            <a
+                                href="{% url 'loans:application_list' %}"
+                                class="hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium"
+                                >My Loans</a
+                            >
+                            <a
+                                href="{% url 'loans:application_wizard' %}"
+                                class="hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium"
+                                >Apply for Loan</a
+                            >
+                            {% if request.user.is_staff %}
+                            <a
+                                href="{% url 'dashboard:staff' %}"
+                                class="hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium"
+                                >Staff View</a
+                            >
+                            {% endif %}
+                            <a
+                                href="{% url 'accounts:profile' %}"
+                                class="hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium"
+                                >Profile</a
+                            >
+                            <a
+                                href="{% url 'documents:list' %}"
+                                class="hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium"
+                                >Documents</a
+                            >
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        {% if request.user.is_authenticated %}
+                        <!-- Desktop User Menu -->
+                        <div class="hidden md:flex items-center space-x-4">
+                            <span class="text-sm"
+                                >Welcome, {{ request.user.first_name }}</span
+                            >
+                            <form
+                                method="post"
+                                action="{% url 'accounts:logout' %}"
+                                style="margin: 0"
+                            >
+                                {% csrf_token %}
+                                <button
+                                    type="submit"
+                                    class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-md text-sm font-medium"
+                                    style="border: none; cursor: pointer"
+                                >
+                                    Logout
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <!-- Desktop Auth Links -->
+                        <div class="hidden md:flex items-center space-x-4">
+                            <a
+                                href="{% url 'accounts:login' %}"
+                                class="hover:text-gray-300 px-3 py-2 rounded-md text-sm font-medium"
+                                >Login</a
+                            >
+                            <a
+                                href="{% url 'accounts:signup' %}"
+                                class="btn-accent"
+                                >Sign Up</a
+                            >
+                        </div>
+                        {% endif %}
+
+                        <!-- Mobile menu button -->
+                        <button
+                            @click="mobileMenuOpen = !mobileMenuOpen"
+                            class="md:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-gray-700 focus:outline-none"
+                        >
+                            <svg
+                                class="h-6 w-6"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 6h16M4 12h16M4 18h16"
+                                ></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <div x-show="mobileMenuOpen" class="md:hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a
+                        href="{% url 'dashboard:home' %}"
+                        class="hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium"
+                        >Dashboard</a
+                    >
+                    {% if request.user.is_authenticated %}
+                    <a
+                        href="{% url 'loans:application_list' %}"
+                        class="hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium"
+                        >My Loans</a
+                    >
+                    <a
+                        href="{% url 'loans:application_wizard' %}"
+                        class="hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium"
+                        >Apply for Loan</a
+                    >
+                    <a
+                        href="{% url 'accounts:profile' %}"
+                        class="hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium"
+                        >Profile</a
+                    >
+                    <a
+                        href="{% url 'documents:list' %}"
+                        class="hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium"
+                        >Documents</a
+                    >
+                    <form
+                        method="post"
+                        action="{% url 'accounts:logout' %}"
+                        style="margin: 0"
+                    >
+                        {% csrf_token %}
+                        <button
+                            type="submit"
+                            class="hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium"
+                            style="
+                                background: none;
+                                border: none;
+                                width: 100%;
+                                text-align: left;
+                                cursor: pointer;
+                            "
+                        >
+                            Logout
+                        </button>
+                    </form>
+                    {% else %}
+                    <a
+                        href="{% url 'accounts:login' %}"
+                        class="hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium"
+                        >Login</a
+                    >
+                    <a
+                        href="{% url 'accounts:signup' %}"
+                        class="hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium"
+                        >Sign Up</a
+                    >
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            {% for message in messages %}
+            <div
+                class="alert alert-{{ message.tags }} mb-4 p-4 rounded-md"
+                role="alert"
+            >
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        {% if message.tags == 'success' %}
+                        <svg
+                            class="h-5 w-5 text-green-400"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clip-rule="evenodd"
+                            ></path>
+                        </svg>
+                        {% elif message.tags == 'error' %}
+                        <svg
+                            class="h-5 w-5 text-red-400"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                clip-rule="evenodd"
+                            ></path>
+                        </svg>
+                        {% else %}
+                        <svg
+                            class="h-5 w-5 text-blue-400"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                        >
+                            <path
+                                fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clip-rule="evenodd"
+                            ></path>
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-900">
+                            {{ message }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-primary text-white mt-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">
+                            Berit Shalvah Financial Services
+                        </h3>
+                        <p class="text-sm">
+                            Where Vision Meets Responsible Capital
+                        </p>
+                        <p class="text-sm mt-2">
+                            {{ portal_settings.company_address }}
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                        <p class="text-sm">
+                            Email: {{ portal_settings.company_email }}
+                        </p>
+                        <p class="text-sm">
+                            Phone: {{ portal_settings.company_phone }}
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                        <ul class="text-sm space-y-2">
+                            <li>
+                                <a
+                                    href="{% url 'loans:calculator' %}"
+                                    class="hover:text-gray-300"
+                                    >Loan Calculator</a
+                                >
+                            </li>
+                            <li>
+                                <a href="#" class="hover:text-gray-300"
+                                    >About Us</a
+                                >
+                            </li>
+                            <li>
+                                <a href="#" class="hover:text-gray-300"
+                                    >Terms & Conditions</a
+                                >
+                            </li>
+                            <li>
+                                <a href="#" class="hover:text-gray-300"
+                                    >Privacy Policy</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="border-t border-blue-700 mt-8 pt-8 text-center">
+                    <p class="text-sm">
+                        &copy; 2026 Berit Shalvah Financial Services Ltd. All
+                        rights reserved.
+                    </p>
+                    <p class="text-sm mt-2">Integrity. Access. Growth.</p>
+                </div>
+            </div>
+        </footer>
+
+        <!-- JavaScript -->
+        <script
+            src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+            defer
+        ></script>
+        {% block extra_js %}{% endblock %}
+    </body>
+</html>

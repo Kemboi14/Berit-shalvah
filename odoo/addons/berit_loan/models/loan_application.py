@@ -54,10 +54,10 @@ class BeritLoanApplication(models.Model):
 
     interest_rate = fields.Float(
         string="Interest Rate (%)",
-        required=True,
         compute="_compute_interest_rate",
         store=True,
         tracking=True,
+        help="Auto-computed from loan amount tier. 20% for ≤99k, down to 5% for >1M.",
     )
 
     monthly_repayment = fields.Float(

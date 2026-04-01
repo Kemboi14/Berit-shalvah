@@ -22,9 +22,9 @@ class BeritRepaymentSchedule(models.Model):
 
     total_due = fields.Float(
         string="Total Due (KES)",
-        required=True,
         compute="_compute_total_due",
         store=True,
+        help="Auto-computed as principal + interest. Never set this manually.",
     )
 
     amount_paid = fields.Float(string="Amount Paid (KES)", default=0.0)
@@ -74,10 +74,20 @@ class BeritRepaymentSchedule(models.Model):
 
     @api.depends("due_date", "status", "amount_paid")
     def _compute_days_overdue(self):
-        """Compute days overdue"""
+        """Compute days overdue.
+
+        ``due_date`` is a stored Date field, but during onchange evaluation
+        Odoo may call this compute before the field is populated — in that
+        case the field value is ``False`` (not ``None``).  Guard against that
+        so we never attempt a ``False < date`` comparison.
+        """
         today = fields.Date.today()
         for schedule in self:
-            if schedule.status == "pending" and schedule.due_date < today:
+            if (
+                schedule.due_date
+                and schedule.status == "pending"
+                and schedule.due_date < today
+            ):
                 schedule.days_overdue = (today - schedule.due_date).days
             else:
                 schedule.days_overdue = 0

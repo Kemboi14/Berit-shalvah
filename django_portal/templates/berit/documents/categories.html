@@ -1,5 +1,4 @@
-{% extends "base.html" %} {% block title %}Document Categories — Berit Shalvah{%
-endblock %} {% block content %}
+{% extends "base.html" %} {% block title %}Document Categories — Berit Shalvah{% endblock %} {% block content %}
 <div class="bs-content-with-sidebar">
     <!-- Page Header -->
     <div class="bs-page-header">
@@ -41,8 +40,7 @@ endblock %} {% block content %}
                                     Category Name
                                     <span class="text-danger">*</span>
                                 </label>
-                                {{ form.name }} {% for error in form.name.errors
-                                %}
+                                {{ form.name }} {% for error in form.name.errors %}
                                 <div class="invalid-feedback d-block">
                                     {{ error }}
                                 </div>
@@ -56,8 +54,7 @@ endblock %} {% block content %}
                                 >
                                     Description
                                 </label>
-                                {{ form.description }} {% for error in
-                                form.description.errors %}
+                                {{ form.description }} {% for error in form.description.errors %}
                                 <div class="invalid-feedback d-block">
                                     {{ error }}
                                 </div>
@@ -130,9 +127,7 @@ endblock %} {% block content %}
                                             font-size: 0.875rem;
                                         "
                                     >
-                                        {{
-                                        category.description|default:"—"|truncatechars:60
-                                        }}
+                                        {{ category.description|default:"—"|truncatechars:60 }}
                                     </td>
                                     <td>
                                         <span
@@ -142,9 +137,7 @@ endblock %} {% block content %}
                                                 color: var(--gray-600);
                                             "
                                         >
-                                            {{
-                                            category.uploadeddocument_set.count
-                                            }}
+                                            {{ category.uploadeddocument_set.count }}
                                         </span>
                                     </td>
                                     <td
@@ -156,9 +149,7 @@ endblock %} {% block content %}
                                         {{ category.created_at|date:"d M Y" }}
                                     </td>
                                     <td class="text-end">
-                                        {% if
-                                        category.uploadeddocument_set.count == 0
-                                        %}
+                                        {% if category.uploadeddocument_set.count == 0 %}
                                         <button
                                             type="button"
                                             class="btn btn-sm"
@@ -214,9 +205,7 @@ endblock %} {% block content %}
                                                         >
                                                             Delete category
                                                             <strong
-                                                                >{{
-                                                                category.name
-                                                                }}</strong
+                                                                >{{ category.name }}</strong
                                                             >? This action
                                                             cannot be undone.
                                                         </p>

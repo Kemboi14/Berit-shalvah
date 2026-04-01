@@ -10,18 +10,15 @@ from . import auth_views, simple_views, views
 app_name = "accounts"
 
 urlpatterns = [
-    # Enhanced Authentication
-    path("login/", auth_views.CustomLoginView.as_view(), name="login"),
-    path("phone-login/", auth_views.PhoneLoginView.as_view(), name="phone_login"),
-    path("email-login/", auth_views.EmailLoginView.as_view(), name="email_login"),
+    # Authentication
+    path("login/", auth_views.UnifiedLoginView.as_view(), name="login"),
     path("logout/", auth_views.CustomLogoutView.as_view(), name="logout"),
-    path("signup/", auth_views.CustomSignupView.as_view(), name="signup"),
-    # Profile
-    path("profile/", views.profile_view, name="profile"),
+    path("signup/", auth_views.SignupView.as_view(), name="signup"),
     # AJAX Authentication
     path("ajax-login/", auth_views.ajax_login, name="ajax_login"),
     path("check-user/", auth_views.check_user_exists, name="check_user"),
     # Profile and Settings
+    path("profile/", views.profile_view, name="profile"),
     path("profile/edit/", views.ProfileUpdateView.as_view(), name="profile_edit"),
     path("settings/", views.settings_view, name="settings"),
     path("change-password/", views.change_password_view, name="change_password"),

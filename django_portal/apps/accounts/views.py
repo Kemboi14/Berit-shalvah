@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Views for user authentication and profile management
+Views for user profile management (signup moved to auth_views.py)
 """
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import default_storage
@@ -23,30 +23,6 @@ from .forms import (
     UserProfileUpdateForm,
 )
 from .models import ClientProfile, User, UserDocument, VerificationRequest
-
-
-def signup_view(request):
-    """User registration view"""
-    if request.method == "POST":
-        form = CustomUserCreationForm(request.POST, request.FILES)
-        if form.is_valid():
-            user = form.save()
-
-            # Create client profile
-            ClientProfile.objects.create(user=user)
-
-            # Send verification email
-            # TODO: Implement email verification
-
-            messages.success(
-                request,
-                "Account created successfully! Please check your email to verify your account.",
-            )
-            return redirect("accounts:login")
-    else:
-        form = CustomUserCreationForm()
-
-    return render(request, "accounts/signup.html", {"form": form})
 
 
 @login_required

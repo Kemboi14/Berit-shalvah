@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Enhanced authentication views with phone number support
+Authentication views for Berit Shalvah
 """
 
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import logout
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import CreateView
 
-from .auth_forms import CustomAuthenticationForm, EmailLoginForm, PhoneLoginForm
 from .forms import CustomUserCreationForm
 from .models import User
 
@@ -34,108 +33,81 @@ class CustomLogoutView(LogoutView):
         return super().post(request, *args, **kwargs)
 
 
-class CustomLoginView(LoginView):
-    """Custom login view that accepts email/username and phone"""
+class UnifiedLoginView(LoginView):
+    """
+    Unified login view that handles email, phone, and username.
+    The template has separate forms that all POST to this view.
+    """
 
-    form_class = CustomAuthenticationForm
     template_name = "accounts/login.html"
 
-    def form_valid(self, form):
-        # Try to authenticate with email/username first
-        login_field = form.cleaned_data.get("login_field")
-        password = form.cleaned_data.get("password")
+    def post(self, request, *args, **kwargs):
+        login_type = request.POST.get("login_type", "email")
+        login_field = request.POST.get("login_field", "").strip()
+        password = request.POST.get("password", "")
 
-        # Try authentication with different fields
         user = None
 
-        # Try with email
-        try:
-            user_obj = User.objects.get(email=login_field)
-            user = authenticate(
-                self.request, username=user_obj.username, password=password
-            )
-        except User.DoesNotExist:
-            pass
-
-        # Try with phone if email didn't work
-        if not user:
+        # Try authentication based on login type
+        if login_type == "email":
             try:
-                user_obj = User.objects.get(phone=login_field)
+                user_obj = User.objects.get(email__iexact=login_field)
+                # Ensure username is synced to email (fix legacy blank usernames)
+                if not user_obj.username:
+                    user_obj.username = user_obj.email
+                    user_obj.save(update_fields=["username"])
                 user = authenticate(
-                    self.request, username=user_obj.username, password=password
+                    request, username=user_obj.username, password=password
                 )
             except User.DoesNotExist:
                 pass
 
-        # Try with username if neither email nor phone worked
-        if not user:
-            user = authenticate(self.request, username=login_field, password=password)
+        elif login_type == "phone":
+            try:
+                user_obj = User.objects.get(phone=login_field)
+                if not user_obj.username:
+                    user_obj.username = user_obj.email
+                    user_obj.save(update_fields=["username"])
+                user = authenticate(
+                    request, username=user_obj.username, password=password
+                )
+            except User.DoesNotExist:
+                pass
 
-        if user:
-            login(self.request, user)
-            messages.success(self.request, _("Login successful!"))
-            return redirect(self.get_success_url())
+        else:  # username
+            user = authenticate(request, username=login_field, password=password)
+
+        if user is not None:
+            if not user.is_active:
+                messages.error(
+                    request,
+                    _("Your account has been deactivated. Please contact support."),
+                )
+                return render(
+                    request,
+                    self.template_name,
+                    {"login_field": login_field, "login_type": login_type},
+                )
+            login(request, user)
+            messages.success(
+                request,
+                _("Login successful! Welcome back, {}.").format(
+                    user.first_name or user.email
+                ),
+            )
+            next_url = request.GET.get("next") or reverse_lazy("dashboard:home")
+            return redirect(next_url)
         else:
-            form.add_error(None, _("Invalid login credentials."))
-            return self.form_invalid(form)
-
-
-class PhoneLoginView(LoginView):
-    """Phone number based login view"""
-
-    form_class = PhoneLoginForm
-    template_name = "accounts/phone_login.html"
-
-    def form_valid(self, form):
-        phone = form.cleaned_data.get("phone")
-        password = form.cleaned_data.get("password")
-
-        try:
-            user_obj = User.objects.get(phone=phone)
-            user = authenticate(
-                self.request, username=user_obj.username, password=password
+            messages.error(request, _("Invalid email or password. Please try again."))
+            return render(
+                request,
+                self.template_name,
+                {"login_field": login_field, "login_type": login_type},
             )
-            if user:
-                login(self.request, user)
-                messages.success(self.request, _("Login successful!"))
-                return redirect(self.get_success_url())
-            else:
-                form.add_error("password", _("Invalid password."))
-        except User.DoesNotExist:
-            form.add_error("phone", _("No account found with this phone number."))
-
-        return self.form_invalid(form)
 
 
-class EmailLoginView(LoginView):
-    """Email based login view"""
-
-    form_class = EmailLoginForm
-    template_name = "accounts/email_login.html"
-
-    def form_valid(self, form):
-        email = form.cleaned_data.get("email")
-        password = form.cleaned_data.get("password")
-
-        try:
-            user_obj = User.objects.get(email=email)
-            user = authenticate(
-                self.request, username=user_obj.username, password=password
-            )
-            if user:
-                login(self.request, user)
-                messages.success(self.request, _("Login successful!"))
-                return redirect(self.get_success_url())
-            else:
-                form.add_error("password", _("Invalid password."))
-        except User.DoesNotExist:
-            form.add_error("email", _("No account found with this email address."))
-
-        return self.form_invalid(form)
-
-
-class CustomSignupView(CreateView):
-    """Custom signup view with phone number requirement"""
+class SignupView(CreateView):
+    """Signup view - consolidated from duplicate implementations"""
 
     form_class = CustomUserCreationForm
     template_name = "accounts/signup.html"
@@ -143,8 +115,16 @@ class CustomSignupView(CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+
+        # ClientProfile is created automatically by the post_save signal.
+        # Use get_or_create as a safety net in case the signal didn't fire.
+        from .models import ClientProfile
+
+        ClientProfile.objects.get_or_create(user=self.object)
+
         messages.success(
-            self.request, _("Account created successfully! Please log in.")
+            self.request,
+            _("Account created successfully! You can now log in."),
         )
         return response
 
@@ -158,19 +138,19 @@ def ajax_login(request):
     if request.method == "POST":
         login_field = request.POST.get("login_field")
         password = request.POST.get("password")
+        login_type = request.POST.get("login_type", "email")
 
         user = None
 
-        # Try authentication with different fields
-        # Try with email
-        try:
-            user_obj = User.objects.get(email=login_field)
-            user = authenticate(request, username=user_obj.username, password=password)
-        except User.DoesNotExist:
-            pass
-
-        # Try with phone if email didn't work
-        if not user:
+        if login_type == "email":
+            try:
+                user_obj = User.objects.get(email=login_field)
+                user = authenticate(
+                    request, username=user_obj.username, password=password
+                )
+            except User.DoesNotExist:
+                pass
+        elif login_type == "phone":
             try:
                 user_obj = User.objects.get(phone=login_field)
                 user = authenticate(
@@ -178,23 +158,30 @@ def ajax_login(request):
                 )
             except User.DoesNotExist:
                 pass
-
-        # Try with username if neither email nor phone worked
-        if not user:
+        else:
             user = authenticate(request, username=login_field, password=password)
 
         if user:
+            if not user.is_active:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": _("Your account has been deactivated."),
+                    }
+                )
             login(request, user)
             return JsonResponse(
                 {
                     "success": True,
                     "message": _("Login successful!"),
-                    "redirect_url": request.GET.get("next", reverse_lazy("dashboard")),
+                    "redirect_url": str(
+                        request.GET.get("next") or reverse_lazy("dashboard:home")
+                    ),
                 }
             )
         else:
             return JsonResponse(
-                {"success": False, "message": _("Invalid login credentials.")}
+                {"success": False, "message": _("Invalid email or password.")}
             )
 
     return JsonResponse({"success": False, "message": _("Invalid request method.")})
@@ -202,9 +189,11 @@ def ajax_login(request):
 
 def check_user_exists(request):
     """Check if user exists by email or phone"""
+    from django.db.models import Q
+
     if request.method == "GET":
         identifier = request.GET.get("identifier")
-        user_type = request.GET.get("type", "email")  # email or phone
+        user_type = request.GET.get("type", "email")
 
         if user_type == "email":
             exists = User.objects.filter(email=identifier).exists()
@@ -212,9 +201,7 @@ def check_user_exists(request):
             exists = User.objects.filter(phone=identifier).exists()
         else:
             exists = User.objects.filter(
-                models.Q(email=identifier)
-                | models.Q(phone=identifier)
-                | models.Q(username=identifier)
+                Q(email=identifier) | Q(phone=identifier) | Q(username=identifier)
             ).exists()
 
         return JsonResponse({"exists": exists})

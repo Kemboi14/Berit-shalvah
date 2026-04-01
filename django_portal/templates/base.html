@@ -1267,8 +1267,7 @@
                                 aria-expanded="false"
                             >
                                 <div class="nav-user-avatar">
-                                    {{ user.first_name|slice:":1"|upper }}{{
-                                    user.last_name|slice:":1"|upper }}
+                                    {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
                                 </div>
                                 <span
                                     class="d-none d-md-inline"
@@ -1277,8 +1276,7 @@
                                         font-size: 0.875rem;
                                     "
                                 >
-                                    {{ user.get_full_name|default:user.username
-                                    }}
+                                    {{ user.get_full_name|default:user.username }}
                                 </span>
                             </a>
                             <ul
@@ -1301,9 +1299,7 @@
                                                 color: var(--gray-900);
                                             "
                                         >
-                                            {{
-                                            user.get_full_name|default:user.username
-                                            }}
+                                            {{ user.get_full_name|default:user.username }}
                                         </div>
                                         <div
                                             style="
@@ -1628,11 +1624,14 @@
 
             // ── Button loading helpers ──
             function btnLoading(btn, text) {
-                btn.disabled = true;
+                // Defer disable so the form submit event fires first
                 btn._origHtml = btn.innerHTML;
-                btn.innerHTML =
-                    '<span class="bs-spinner me-2"></span>' +
-                    (text || "Please wait…");
+                setTimeout(function () {
+                    btn.disabled = true;
+                    btn.innerHTML =
+                        '<span class="bs-spinner me-2"></span>' +
+                        (text || "Please wait…");
+                }, 10);
             }
             function btnReset(btn) {
                 btn.disabled = false;

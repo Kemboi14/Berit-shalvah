@@ -2,9 +2,11 @@
 """
 Signals for accounts app
 """
+
+from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.auth import get_user_model
+
 from .models import ClientProfile, VerificationRequest
 
 User = get_user_model()
@@ -24,4 +26,4 @@ def save_client_profile(sender, instance, **kwargs):
         try:
             instance.client_profile.save()
         except ClientProfile.DoesNotExist:
-            ClientProfile.objects.create(user=instance)
+            ClientProfile.objects.get_or_create(user=instance)

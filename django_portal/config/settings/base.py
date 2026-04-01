@@ -153,6 +153,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Custom User Model
 AUTH_USER_MODEL = "accounts.User"
 
+# Login / Logout URLs
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/portal/"
+LOGOUT_REDIRECT_URL = "/"
+
 # Django Allauth Configuration
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",

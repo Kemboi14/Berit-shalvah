@@ -305,6 +305,7 @@ Shalvah Financial Services{% endblock %} {% block extra_css %}
                                     placeholder="you@example.com"
                                     required
                                     autocomplete="email"
+                                    value="{{ login_field|default:'' }}"
                                 />
                             </div>
                         </div>
@@ -313,17 +314,6 @@ Shalvah Financial Services{% endblock %} {% block extra_css %}
                                 class="d-flex justify-content-between align-items-center mb-1"
                             >
                                 <label class="form-label mb-0">Password</label>
-                                <a
-                                    href="{% url 'accounts:password_reset' %}"
-                                    style="
-                                        font-size: 0.8125rem;
-                                        color: var(--bs-primary);
-                                        text-decoration: none;
-                                        font-weight: 600;
-                                    "
-                                >
-                                    Forgot password?
-                                </a>
                             </div>
                             <div class="input-with-icon position-relative">
                                 <i class="input-icon fas fa-lock"></i>
@@ -403,17 +393,6 @@ Shalvah Financial Services{% endblock %} {% block extra_css %}
                                 class="d-flex justify-content-between align-items-center mb-1"
                             >
                                 <label class="form-label mb-0">Password</label>
-                                <a
-                                    href="{% url 'accounts:password_reset' %}"
-                                    style="
-                                        font-size: 0.8125rem;
-                                        color: var(--bs-primary);
-                                        text-decoration: none;
-                                        font-weight: 600;
-                                    "
-                                >
-                                    Forgot password?
-                                </a>
                             </div>
                             <div class="input-with-icon position-relative">
                                 <i class="input-icon fas fa-lock"></i>
@@ -493,15 +472,6 @@ Shalvah Financial Services{% endblock %} {% block extra_css %}
                             >
                                 <label class="form-label mb-0">Password</label>
                                 <a
-                                    href="{% url 'accounts:password_reset' %}"
-                                    style="
-                                        font-size: 0.8125rem;
-                                        color: var(--bs-primary);
-                                        text-decoration: none;
-                                        font-weight: 600;
-                                    "
-                                >
-                                    Forgot password?
                                 </a>
                             </div>
                             <div class="input-with-icon position-relative">
@@ -611,6 +581,23 @@ Shalvah Financial Services{% endblock %} {% block extra_css %}
             if (/^2547\d{8}$/.test(v)) this.value = "+" + v;
         });
     }
+
+    // Restore active tab and pre-fill field after failed login
+    (function () {
+        var loginType = "{{ login_type|default:'email' }}";
+        var loginField = "{{ login_field|default:'' }}";
+        if (loginType && loginType !== "email") {
+            var btn = document.querySelector('.login-tab[onclick*="' + loginType + '"]');
+            if (btn) switchLoginTab(loginType, btn);
+        }
+        if (loginField && loginType !== "email") {
+            var panel = document.getElementById("panel-" + loginType);
+            if (panel) {
+                var inp = panel.querySelector('input[name="login_field"]');
+                if (inp) inp.value = loginField;
+            }
+        }
+    })();
 
     // Inline validation feedback
     document.querySelectorAll(".login-panel form").forEach(function (form) {

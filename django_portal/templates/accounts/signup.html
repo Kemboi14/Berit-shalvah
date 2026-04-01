@@ -3,354 +3,355 @@
 {% load crispy_forms_tags %}
 
 {% block title %}Sign Up - Berit Shalvah Financial Services{% endblock %}
-
 {% block extra_css %}
 <style>
-.signup-container {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 0;
-}
+    .signup-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #1b3a6b 0%, #2e6da4 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+    }
 
-.signup-card {
-    background: white;
-    border-radius: 1rem;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    max-width: 600px;
-    width: 100%;
-    margin: 0 1rem;
-}
-
-.signup-header {
-    background: linear-gradient(135deg, #2563eb, #3b82f6);
-    color: white;
-    padding: 2rem;
-    text-align: center;
-}
-
-.signup-header h2 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.signup-header p {
-    margin: 0;
-    opacity: 0.9;
-    font-size: 0.875rem;
-}
-
-.signup-body {
-    padding: 2rem;
-    max-height: 600px;
-    overflow-y: auto;
-}
-
-.progress-steps {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 2rem;
-    position: relative;
-}
-
-.progress-step {
-    flex: 1;
-    text-align: center;
-    position: relative;
-    z-index: 2;
-}
-
-.progress-step::before {
-    content: '';
-    position: absolute;
-    top: 15px;
-    left: 50%;
-    right: -50%;
-    height: 2px;
-    background: #e5e7eb;
-    z-index: -1;
-}
-
-.progress-step:last-child::before {
-    display: none;
-}
-
-.progress-step.active::before {
-    background: #2563eb;
-}
-
-.progress-step.completed::before {
-    background: #10b981;
-}
-
-.step-number {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: #e5e7eb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 0.5rem;
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: #6b7280;
-}
-
-.progress-step.active .step-number {
-    background: #2563eb;
-    color: white;
-}
-
-.progress-step.completed .step-number {
-    background: #10b981;
-    color: white;
-}
-
-.step-title {
-    font-size: 0.75rem;
-    color: #6b7280;
-}
-
-.progress-step.active .step-title {
-    color: #2563eb;
-    font-weight: 600;
-}
-
-.form-section {
-    display: none;
-}
-
-.form-section.active {
-    display: block;
-    animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #374151;
-    font-size: 0.875rem;
-}
-
-.form-label .required {
-    color: #ef4444;
-}
-
-.form-control {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    transition: all 0.2s;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.form-control.is-invalid {
-    border-color: #ef4444;
-    background: #fef2f2;
-}
-
-.invalid-feedback {
-    color: #ef4444;
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
-    display: block;
-}
-
-.help-text {
-    color: #6b7280;
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.btn {
-    padding: 0.875rem 1.5rem;
-    border: none;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 1rem;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #2563eb, #3b82f6);
-    color: white;
-    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1);
-}
-
-.btn-primary:hover {
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
-    box-shadow: 0 6px 8px rgba(37, 99, 235, 0.15);
-    transform: translateY(-1px);
-}
-
-.btn-secondary {
-    background: #f3f4f6;
-    color: #6b7280;
-    border: 1px solid #e5e7eb;
-}
-
-.btn-secondary:hover {
-    background: #e5e7eb;
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.form-navigation {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 2rem;
-    padding-top: 2rem;
-    border-top: 1px solid #e5e7eb;
-}
-
-.terms-checkbox {
-    margin-bottom: 1.5rem;
-}
-
-.terms-checkbox label {
-    display: flex;
-    align-items: flex-start;
-    cursor: pointer;
-}
-
-.terms-checkbox input[type="checkbox"] {
-    margin-right: 0.5rem;
-    margin-top: 0.25rem;
-}
-
-.terms-text {
-    font-size: 0.875rem;
-    color: #6b7280;
-    line-height: 1.5;
-}
-
-.terms-text a {
-    color: #2563eb;
-    text-decoration: none;
-}
-
-.terms-text a:hover {
-    text-decoration: underline;
-}
-
-.alert {
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
-    border: 1px solid;
-}
-
-.alert-danger {
-    background: #fef2f2;
-    border-color: #ef4444;
-    color: #991b1b;
-}
-
-.alert-success {
-    background: #f0fdf4;
-    border-color: #10b981;
-    color: #065f46;
-}
-
-.loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-@media (max-width: 768px) {
     .signup-card {
-        margin: 0 0.5rem;
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-width: 600px;
+        width: 100%;
+        margin: 0 1rem;
     }
-    
+
     .signup-header {
-        padding: 1.5rem;
+        background: linear-gradient(135deg, #1b3a6b, #2e6da4);
+        color: white;
+        padding: 2rem;
+        text-align: center;
     }
-    
+
+    .signup-header h2 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .signup-header p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.875rem;
+    }
+
     .signup-body {
-        padding: 1.5rem;
+        padding: 2rem;
+        max-height: 600px;
+        overflow-y: auto;
     }
-    
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-    
+
     .progress-steps {
-        flex-direction: column;
-        gap: 1rem;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        position: relative;
     }
-    
+
+    .progress-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+
     .progress-step::before {
+        content: "";
+        position: absolute;
+        top: 15px;
+        left: 50%;
+        right: -50%;
+        height: 2px;
+        background: #e5e7eb;
+        z-index: -1;
+    }
+
+    .progress-step:last-child::before {
         display: none;
     }
-}
-</style>
-{% endblock %}
 
-{% block content %}
+    .progress-step.active::before {
+        background: #2e6da4;
+    }
+
+    .progress-step.completed::before {
+        background: #0d9488;
+    }
+
+    .step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: #6b7280;
+    }
+
+    .progress-step.active .step-number {
+        background: #2e6da4;
+        color: white;
+    }
+
+    .progress-step.completed .step-number {
+        background: #10b981;
+        color: white;
+    }
+
+    .step-title {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    .progress-step.active .step-title {
+        color: #2e6da4;
+        font-weight: 600;
+    }
+
+    .form-section {
+        display: none;
+    }
+
+    .form-section.active {
+        display: block;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+
+    .form-label .required {
+        color: #ef4444;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #2e6da4;
+        box-shadow: 0 0 0 3px rgba(46, 109, 164, 0.12);
+    }
+
+    .form-control.is-invalid {
+        border-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    .invalid-feedback {
+        color: #ef4444;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    .help-text {
+        color: #6b7280;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .btn {
+        padding: 0.875rem 1.5rem;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #1b3a6b, #2e6da4);
+        color: white;
+        box-shadow: 0 4px 6px rgba(27, 58, 107, 0.12);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #122850, #1b3a6b);
+        box-shadow: 0 6px 8px rgba(18, 40, 80, 0.18);
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #e5e7eb;
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .form-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .terms-checkbox {
+        margin-bottom: 1.5rem;
+    }
+
+    .terms-checkbox label {
+        display: flex;
+        align-items: flex-start;
+        cursor: pointer;
+    }
+
+    .terms-checkbox input[type="checkbox"] {
+        margin-right: 0.5rem;
+        margin-top: 0.25rem;
+    }
+
+    .terms-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.5;
+    }
+
+    .terms-text a {
+        color: #2e6da4;
+        text-decoration: none;
+    }
+
+    .terms-text a:hover {
+        text-decoration: underline;
+    }
+
+    .alert {
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid;
+    }
+
+    .alert-danger {
+        background: #fef2f2;
+        border-color: #ef4444;
+        color: #991b1b;
+    }
+
+    .alert-success {
+        background: #f0fdf4;
+        border-color: #10b981;
+        color: #065f46;
+    }
+
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .signup-card {
+            margin: 0 0.5rem;
+        }
+
+        .signup-header {
+            padding: 1.5rem;
+        }
+
+        .signup-body {
+            padding: 1.5rem;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .progress-steps {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .progress-step::before {
+            display: none;
+        }
+    }
+</style>
+{% endblock %} {% block content %}
 <div class="signup-container">
     <div class="signup-card">
         <div class="signup-header">
             <h2>Create Account</h2>
             <p>Join Berit Shalvah Financial Services</p>
         </div>
-        
+
         <div class="signup-body">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-            
+            {% if messages %} {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %} {% endif %}
+
             <div class="progress-steps">
                 <div class="progress-step active" data-step="1">
                     <div class="step-number">1</div>
@@ -369,166 +370,221 @@
                     <div class="step-title">Account Setup</div>
                 </div>
             </div>
-            
+
             <form method="post" id="signup-form" novalidate>
                 {% csrf_token %}
-                
+
                 <!-- Step 1: Personal Information -->
                 <div class="form-section active" id="step1">
                     <h3>Personal Information</h3>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">First Name <span class="required">*</span></label>
-                            {{ form.first_name }}
-                            {% if form.first_name.errors %}
-                                <div class="invalid-feedback">
-                                    {{ form.first_name.errors.0 }}
-                                </div>
+                            <label class="form-label"
+                                >First Name
+                                <span class="required">*</span></label
+                            >
+                            {{ form.first_name }} {% if form.first_name.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.first_name.errors.0 }}
+                            </div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="form-group">
-                            <label class="form-label">Last Name <span class="required">*</span></label>
-                            {{ form.last_name }}
-                            {% if form.last_name.errors %}
-                                <div class="invalid-feedback">
-                                    {{ form.last_name.errors.0 }}
-                                </div>
+                            <label class="form-label"
+                                >Last Name
+                                <span class="required">*</span></label
+                            >
+                            {{ form.last_name }} {% if form.last_name.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.last_name.errors.0 }}
+                            </div>
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label class="form-label">Email Address <span class="required">*</span></label>
-                        {{ form.email }}
-                        {% if form.email.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.email.errors.0 }}
-                            </div>
+                        <label class="form-label"
+                            >Email Address
+                            <span class="required">*</span></label
+                        >
+                        {{ form.email }} {% if form.email.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.email.errors.0 }}
+                        </div>
                         {% endif %}
-                        <small class="help-text">We'll send account updates to this email</small>
+                        <small class="help-text"
+                            >We'll send account updates to this email</small
+                        >
                     </div>
-                    
+
                     <div class="form-group">
-                        <label class="form-label">Date of Birth <span class="required">*</span></label>
-                        {{ form.date_of_birth }}
-                        {% if form.date_of_birth.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.date_of_birth.errors.0 }}
-                            </div>
+                        <label class="form-label"
+                            >Date of Birth
+                            <span class="required">*</span></label
+                        >
+                        {{ form.date_of_birth }} {% if form.date_of_birth.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.date_of_birth.errors.0 }}
+                        </div>
                         {% endif %}
-                        <small class="help-text">You must be at least 18 years old</small>
+                        <small class="help-text"
+                            >You must be at least 18 years old</small
+                        >
                     </div>
                 </div>
-                
+
                 <!-- Step 2: Contact Details -->
                 <div class="form-section" id="step2">
                     <h3>Contact Details</h3>
-                    
+
                     <div class="form-group">
-                        <label class="form-label">Phone Number <span class="required">*</span></label>
-                        {{ form.phone }}
-                        {% if form.phone.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.phone.errors.0 }}
-                            </div>
+                        <label class="form-label"
+                            >Phone Number <span class="required">*</span></label
+                        >
+                        {{ form.phone }} {% if form.phone.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.phone.errors.0 }}
+                        </div>
                         {% endif %}
-                        <small class="help-text">Format: +2547XXXXXXXX (Kenyan number)</small>
+                        <small class="help-text"
+                            >Format: +2547XXXXXXXX (Kenyan number)</small
+                        >
                     </div>
-                    
+
                     <div class="form-group">
-                        <label class="form-label">National ID Number <span class="required">*</span></label>
-                        {{ form.national_id }}
-                        {% if form.national_id.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.national_id.errors.0 }}
-                            </div>
+                        <label class="form-label"
+                            >National ID Number
+                            <span class="required">*</span></label
+                        >
+                        {{ form.national_id }} {% if form.national_id.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.national_id.errors.0 }}
+                        </div>
                         {% endif %}
-                        <small class="help-text">8-digit Kenyan National ID number</small>
+                        <small class="help-text"
+                            >8-digit Kenyan National ID number</small
+                        >
                     </div>
-                    
+
                     <div class="form-group">
-                        <label class="form-label">KRA PIN <span class="required">*</span></label>
-                        {{ form.kra_pin }}
-                        {% if form.kra_pin.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.kra_pin.errors.0 }}
-                            </div>
+                        <label class="form-label"
+                            >KRA PIN <span class="required">*</span></label
+                        >
+                        {{ form.kra_pin }} {% if form.kra_pin.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.kra_pin.errors.0 }}
+                        </div>
                         {% endif %}
-                        <small class="help-text">Kenya Revenue Authority PIN number</small>
+                        <small class="help-text"
+                            >Kenya Revenue Authority PIN number</small
+                        >
                     </div>
                 </div>
-                
+
                 <!-- Step 3: Verification -->
                 <div class="form-section" id="step3">
                     <h3>Security Setup</h3>
-                    
+
                     <div class="form-group">
-                        <label class="form-label">Password <span class="required">*</span></label>
-                        {{ form.password1 }}
-                        {% if form.password1.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.password1.errors.0 }}
-                            </div>
+                        <label class="form-label"
+                            >Password <span class="required">*</span></label
+                        >
+                        {{ form.password1 }} {% if form.password1.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.password1.errors.0 }}
+                        </div>
                         {% endif %}
-                        <small class="help-text">Use at least 8 characters with letters and numbers</small>
+                        <small class="help-text"
+                            >Use at least 8 characters with letters and
+                            numbers</small
+                        >
                     </div>
-                    
+
                     <div class="form-group">
-                        <label class="form-label">Confirm Password <span class="required">*</span></label>
-                        {{ form.password2 }}
-                        {% if form.password2.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.password2.errors.0 }}
-                            </div>
+                        <label class="form-label"
+                            >Confirm Password
+                            <span class="required">*</span></label
+                        >
+                        {{ form.password2 }} {% if form.password2.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.password2.errors.0 }}
+                        </div>
                         {% endif %}
                     </div>
                 </div>
-                
+
                 <!-- Step 4: Account Setup -->
                 <div class="form-section" id="step4">
                     <h3>Terms & Conditions</h3>
-                    
+
                     <div class="terms-checkbox">
                         {{ form.terms_accepted }}
                         <label for="{{ form.terms_accepted.id_for_label }}">
                             <span class="terms-text">
-                                I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a> and 
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>
+                                I agree to the
+                                <a
+                                    href="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#termsModal"
+                                    >Terms and Conditions</a
+                                >
+                                and
+                                <a
+                                    href="#"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#privacyModal"
+                                    >Privacy Policy</a
+                                >
                             </span>
                         </label>
                         {% if form.terms_accepted.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.terms_accepted.errors.0 }}
-                            </div>
+                        <div class="invalid-feedback">
+                            {{ form.terms_accepted.errors.0 }}
+                        </div>
                         {% endif %}
                     </div>
-                    
+
                     <div class="form-group">
                         <p class="text-center text-muted">
-                            By creating an account, you agree to our terms of service and privacy policy.
-                            Your information will be used to verify your identity and provide financial services.
+                            By creating an account, you agree to our terms of
+                            service and privacy policy. Your information will be
+                            used to verify your identity and provide financial
+                            services.
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="form-navigation">
-                    <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        id="prevBtn"
+                        style="display: none"
+                    >
                         Previous
                     </button>
                     <button type="button" class="btn btn-primary" id="nextBtn">
                         Next
                     </button>
-                    <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="submitBtn"
+                        style="display: none"
+                    >
                         <span class="btn-text">Create Account</span>
-                        <span class="spinner" style="display: none;"></span>
+                        <span class="spinner" style="display: none"></span>
                     </button>
                 </div>
             </form>
-            
+
             <div class="text-center mt-3">
-                <p>Already have an account? <a href="{% url 'accounts:login' %}">Login here</a></p>
+                <p>
+                    Already have an account?
+                    <a href="{% url 'accounts:login' %}">Login here</a>
+                </p>
             </div>
         </div>
     </div>
@@ -540,18 +596,27 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Terms and Conditions</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
             </div>
             <div class="modal-body">
                 <h6>Account Terms</h6>
-                <p>By creating an account with Berit Shalvah Financial Services, you agree to:</p>
+                <p>
+                    By creating an account with Berit Shalvah Financial
+                    Services, you agree to:
+                </p>
                 <ul>
                     <li>Provide accurate and truthful information</li>
-                    <li>Maintain the confidentiality of your account credentials</li>
+                    <li>
+                        Maintain the confidentiality of your account credentials
+                    </li>
                     <li>Use the service for lawful purposes only</li>
                     <li>Comply with all applicable laws and regulations</li>
                 </ul>
-                
+
                 <h6>Financial Services</h6>
                 <p>Our financial services are subject to:</p>
                 <ul>
@@ -560,7 +625,7 @@
                     <li>Anti-money laundering (AML) requirements</li>
                     <li>Know Your Customer (KYC) verification</li>
                 </ul>
-                
+
                 <h6>Data Privacy</h6>
                 <p>We protect your personal information according to:</p>
                 <ul>
@@ -570,7 +635,13 @@
                 </ul>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                >
+                    Close
+                </button>
             </div>
         </div>
     </div>
@@ -582,18 +653,25 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Privacy Policy</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
             </div>
             <div class="modal-body">
                 <h6>Information We Collect</h6>
-                <p>We collect personal information necessary for financial services:</p>
+                <p>
+                    We collect personal information necessary for financial
+                    services:
+                </p>
                 <ul>
                     <li>Personal details (name, contact information)</li>
                     <li>Identification documents (National ID, KRA PIN)</li>
                     <li>Financial information (income, employment details)</li>
                     <li>Transaction history and loan data</li>
                 </ul>
-                
+
                 <h6>How We Use Your Information</h6>
                 <ul>
                     <li>Identity verification and KYC compliance</li>
@@ -601,7 +679,7 @@
                     <li>Service delivery and customer support</li>
                     <li>Regulatory reporting and compliance</li>
                 </ul>
-                
+
                 <h6>Data Protection</h6>
                 <p>We implement robust security measures:</p>
                 <ul>
@@ -612,210 +690,232 @@
                 </ul>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                >
+                    Close
+                </button>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script>
-let currentStep = 1;
-const totalSteps = 4;
+    let currentStep = 1;
+    const totalSteps = 4;
 
-// Initialize form
-document.addEventListener('DOMContentLoaded', function() {
-    setupFormValidation();
-    setupNavigation();
-    setupPhoneFormatting();
-});
+    // Initialize form
+    document.addEventListener("DOMContentLoaded", function () {
+        setupFormValidation();
+        setupNavigation();
+        setupPhoneFormatting();
+    });
 
-function setupFormValidation() {
-    const form = document.getElementById('signup-form');
-    const inputs = form.querySelectorAll('input[required]');
-    
-    inputs.forEach(input => {
-        input.addEventListener('blur', function() {
-            validateField(this);
-        });
-        
-        input.addEventListener('input', function() {
-            if (this.classList.contains('is-invalid')) {
+    function setupFormValidation() {
+        const form = document.getElementById("signup-form");
+        const inputs = form.querySelectorAll("input[required]");
+
+        inputs.forEach((input) => {
+            input.addEventListener("blur", function () {
                 validateField(this);
+            });
+
+            input.addEventListener("input", function () {
+                if (this.classList.contains("is-invalid")) {
+                    validateField(this);
+                }
+            });
+        });
+    }
+
+    function validateField(field) {
+        if (field.hasAttribute("required") && !field.value.trim()) {
+            field.classList.add("is-invalid");
+            return false;
+        } else {
+            field.classList.remove("is-invalid");
+            return true;
+        }
+    }
+
+    function validateStep(step) {
+        const section = document.getElementById(`step${step}`);
+        const requiredFields = section.querySelectorAll("input[required]");
+        let isValid = true;
+
+        requiredFields.forEach((field) => {
+            if (!validateField(field)) {
+                isValid = false;
             }
         });
-    });
-}
 
-function validateField(field) {
-    if (field.hasAttribute('required') && !field.value.trim()) {
-        field.classList.add('is-invalid');
-        return false;
-    } else {
-        field.classList.remove('is-invalid');
-        return true;
+        // Special validation for step 2
+        if (step === 2) {
+            const phone = section.querySelector('input[name="phone"]');
+            const nationalId = section.querySelector(
+                'input[name="national_id"]',
+            );
+
+            // Validate phone format
+            if (phone.value && !phone.value.match(/^\+2547[0-9]{8}$/)) {
+                phone.classList.add("is-invalid");
+                isValid = false;
+            }
+
+            // Validate National ID format
+            if (
+                nationalId.value &&
+                (!nationalId.value.match(/^\d{8}$/) ||
+                    nationalId.value.length !== 8)
+            ) {
+                nationalId.classList.add("is-invalid");
+                isValid = false;
+            }
+        }
+
+        // Special validation for step 3
+        if (step === 3) {
+            const password1 = section.querySelector('input[name="password1"]');
+            const password2 = section.querySelector('input[name="password2"]');
+
+            if (password1.value !== password2.value) {
+                password2.classList.add("is-invalid");
+                isValid = false;
+            }
+
+            if (password1.value.length < 8) {
+                password1.classList.add("is-invalid");
+                isValid = false;
+            }
+        }
+
+        return isValid;
     }
-}
 
-function validateStep(step) {
-    const section = document.getElementById(`step${step}`);
-    const requiredFields = section.querySelectorAll('input[required]');
-    let isValid = true;
-    
-    requiredFields.forEach(field => {
-        if (!validateField(field)) {
-            isValid = false;
-        }
-    });
-    
-    // Special validation for step 2
-    if (step === 2) {
-        const phone = section.querySelector('input[name="phone"]');
-        const nationalId = section.querySelector('input[name="national_id"]');
-        
-        // Validate phone format
-        if (phone.value && !phone.value.match(/^\+2547[0-9]{8}$/)) {
-            phone.classList.add('is-invalid');
-            isValid = false;
-        }
-        
-        // Validate National ID format
-        if (nationalId.value && (!nationalId.value.match(/^\d{8}$/) || nationalId.value.length !== 8)) {
-            nationalId.classList.add('is-invalid');
-            isValid = false;
+    function setupNavigation() {
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const submitBtn = document.getElementById("submitBtn");
+        const form = document.getElementById("signup-form");
+
+        prevBtn.addEventListener("click", () => previousStep());
+        nextBtn.addEventListener("click", () => nextStep());
+
+        form.addEventListener("submit", function (e) {
+            if (!validateStep(currentStep)) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Show loading state
+            const btnText = submitBtn.querySelector(".btn-text");
+            const spinner = submitBtn.querySelector(".spinner");
+
+            submitBtn.classList.add("loading");
+            btnText.style.display = "none";
+            spinner.style.display = "inline-block";
+        });
+    }
+
+    function nextStep() {
+        if (validateStep(currentStep)) {
+            if (currentStep < totalSteps) {
+                // Hide current step
+                document
+                    .getElementById(`step${currentStep}`)
+                    .classList.remove("active");
+
+                // Mark current step as completed
+                const stepElement = document.querySelector(
+                    `.progress-step[data-step="${currentStep}"]`,
+                );
+                stepElement.classList.add("completed");
+                stepElement.classList.remove("active");
+
+                // Show next step
+                currentStep++;
+                showStep(currentStep);
+
+                // Update buttons
+                updateNavigationButtons();
+            }
         }
     }
-    
-    // Special validation for step 3
-    if (step === 3) {
-        const password1 = section.querySelector('input[name="password1"]');
-        const password2 = section.querySelector('input[name="password2"]');
-        
-        if (password1.value !== password2.value) {
-            password2.classList.add('is-invalid');
-            isValid = false;
-        }
-        
-        if (password1.value.length < 8) {
-            password1.classList.add('is-invalid');
-            isValid = false;
-        }
-    }
-    
-    return isValid;
-}
 
-function setupNavigation() {
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const submitBtn = document.getElementById('submitBtn');
-    const form = document.getElementById('signup-form');
-    
-    prevBtn.addEventListener('click', () => previousStep());
-    nextBtn.addEventListener('click', () => nextStep());
-    
-    form.addEventListener('submit', function(e) {
-        if (!validateStep(currentStep)) {
-            e.preventDefault();
-            return false;
-        }
-        
-        // Show loading state
-        const btnText = submitBtn.querySelector('.btn-text');
-        const spinner = submitBtn.querySelector('.spinner');
-        
-        submitBtn.classList.add('loading');
-        btnText.style.display = 'none';
-        spinner.style.display = 'inline-block';
-    });
-}
-
-function nextStep() {
-    if (validateStep(currentStep)) {
-        if (currentStep < totalSteps) {
+    function previousStep() {
+        if (currentStep > 1) {
             // Hide current step
-            document.getElementById(`step${currentStep}`).classList.remove('active');
-            
-            // Mark current step as completed
-            const stepElement = document.querySelector(`.progress-step[data-step="${currentStep}"]`);
-            stepElement.classList.add('completed');
-            stepElement.classList.remove('active');
-            
-            // Show next step
-            currentStep++;
+            document
+                .getElementById(`step${currentStep}`)
+                .classList.remove("active");
+
+            // Mark current step as inactive
+            const stepElement = document.querySelector(
+                `.progress-step[data-step="${currentStep}"]`,
+            );
+            stepElement.classList.remove("active");
+
+            // Show previous step
+            currentStep--;
             showStep(currentStep);
-            
+
             // Update buttons
             updateNavigationButtons();
         }
     }
-}
 
-function previousStep() {
-    if (currentStep > 1) {
-        // Hide current step
-        document.getElementById(`step${currentStep}`).classList.remove('active');
-        
-        // Mark current step as inactive
-        const stepElement = document.querySelector(`.progress-step[data-step="${currentStep}"]`);
-        stepElement.classList.remove('active');
-        
-        // Show previous step
-        currentStep--;
-        showStep(currentStep);
-        
-        // Update buttons
-        updateNavigationButtons();
-    }
-}
+    function showStep(step) {
+        const stepElement = document.getElementById(`step${step}`);
+        stepElement.classList.add("active");
 
-function showStep(step) {
-    const stepElement = document.getElementById(`step${step}`);
-    stepElement.classList.add('active');
-    
-    // Mark as active
-    const progressStep = document.querySelector(`.progress-step[data-step="${step}"]`);
-    progressStep.classList.add('active');
-    
-    // Focus first input in the step
-    const firstInput = stepElement.querySelector('input:not([type="checkbox"]');
-    if (firstInput) {
-        setTimeout(() => firstInput.focus(), 100);
-    }
-}
+        // Mark as active
+        const progressStep = document.querySelector(
+            `.progress-step[data-step="${step}"]`,
+        );
+        progressStep.classList.add("active");
 
-function updateNavigationButtons() {
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const submitBtn = document.getElementById('submitBtn');
-    
-    // Show/hide previous button
-    prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
-    
-    // Update next/submit button
-    if (currentStep === totalSteps) {
-        nextBtn.style.display = 'none';
-        submitBtn.style.display = 'block';
-    } else {
-        nextBtn.style.display = 'block';
-        submitBtn.style.display = 'none';
-    }
-}
-
-function setupPhoneFormatting() {
-    const phoneInput = document.querySelector('input[name="phone"]');
-    
-    phoneInput.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\s/g, '');
-        
-        // Auto-format Kenyan phone numbers
-        if (value.startsWith('07') && value.length === 10) {
-            e.target.value = '+254' + value.substring(1);
-        } else if (value.startsWith('2547') && value.length === 12) {
-            e.target.value = '+' + value;
+        // Focus first input in the step
+        const firstInput = stepElement.querySelector(
+            'input:not([type="checkbox"]',
+        );
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100);
         }
-    });
-}
+    }
+
+    function updateNavigationButtons() {
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const submitBtn = document.getElementById("submitBtn");
+
+        // Show/hide previous button
+        prevBtn.style.display = currentStep > 1 ? "block" : "none";
+
+        // Update next/submit button
+        if (currentStep === totalSteps) {
+            nextBtn.style.display = "none";
+            submitBtn.style.display = "block";
+        } else {
+            nextBtn.style.display = "block";
+            submitBtn.style.display = "none";
+        }
+    }
+
+    function setupPhoneFormatting() {
+        const phoneInput = document.querySelector('input[name="phone"]');
+
+        phoneInput.addEventListener("input", function (e) {
+            let value = e.target.value.replace(/\s/g, "");
+
+            // Auto-format Kenyan phone numbers
+            if (value.startsWith("07") && value.length === 10) {
+                e.target.value = "+254" + value.substring(1);
+            } else if (value.startsWith("2547") && value.length === 12) {
+                e.target.value = "+" + value;
+            }
+        });
+    }
 </script>
 {% endblock %}
